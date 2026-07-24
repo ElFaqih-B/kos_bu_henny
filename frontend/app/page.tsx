@@ -10,7 +10,7 @@ export default function HomePage() {
          <HeroSection
           headline="Kamar yang nyaman, tanpa proses cari kos yang ribet."
           subheadline="Lihat pilihan kamar, fasilitas, dan lokasi Kos Bu Henny. Kalau sudah menemukan yang cocok, tanyakan ketersediaannya langsung."
-          heroImageUrl="/images/hero.png"
+          heroImageUrl="/images/hero.avif"
           primaryCtaText="Lihat Pilihan Kamar"
           secondaryCtaText="Tanya via WhatsApp"
           whatsappUrl={null}

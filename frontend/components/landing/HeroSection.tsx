@@ -77,6 +77,8 @@ export default function HeroSection({
             inset-0
             bg-cover
             bg-center
+            brightness-50
+            saturate-(0.9)
           "
           style={
             heroImageUrl
@@ -110,7 +112,7 @@ export default function HeroSection({
           z-10
 
           flex
-          min-h-[520px]
+          min-h-130
           items-center
           justify-center
 
@@ -303,7 +305,7 @@ export default function HeroSection({
 
               rounded-[10px]
               border
-              border-black/[0.08]
+              border-black/8
 
               bg-white
 
