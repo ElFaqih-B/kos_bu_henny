@@ -1,24 +1,13 @@
-import { MEDIA_BASE_URL } from "./config";
+export function mediaUrl(path?: string | null) {
+  if (!path) return null;
 
-
-export function getMediaUrl(
-  path: string | null | undefined,
-): string | null {
-  if (!path) {
-    return null;
-  }
-
-  // Sudah berupa URL penuh.
-  if (
-    path.startsWith("http://") ||
-    path.startsWith("https://")
-  ) {
+  // URL eksternal
+  if (/^https?:\/\//.test(path)) {
     return path;
   }
 
-  const normalizedPath = path.startsWith("/")
+  // URL backend melalui Next.js proxy
+  return path.startsWith("/")
     ? path
     : `/${path}`;
-
-  return `${MEDIA_BASE_URL}${normalizedPath}`;
 }

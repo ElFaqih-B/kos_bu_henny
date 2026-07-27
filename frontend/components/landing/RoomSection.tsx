@@ -1,10 +1,11 @@
 "use client";
 
 import {
+  Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-
 import {
   useEffect,
   useMemo,
@@ -12,1126 +13,601 @@ import {
   useState,
 } from "react";
 
-import type {
-  Kamar,
-  Pengaturan,
-} from "@/lib/types";
-
+import SearchBar from "@/components/ui/SearchBar";
+import type { Kamar } from "@/lib/types";
 import RoomCard from "./RoomCard";
-
 
 type RoomSectionProps = {
   rooms: Kamar[];
-  settings: Pengaturan;
+  whatsappUrl?: string | null;
 };
 
-
-type BranchFilter =
-  | number
-  | "all";
-
-
-const DESKTOP_PER_PAGE = 3;
-
+const ROOMS_PER_PAGE = 3;
 
 export default function RoomSection({
   rooms,
-  settings,
+  whatsappUrl,
 }: RoomSectionProps) {
-  const sliderRef =
-    useRef<HTMLDivElement>(null);
-
-  const cardRefs =
-    useRef<Array<HTMLDivElement | null>>([]);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [selectedBranch, setSelectedBranch] =
-    useState<BranchFilter>("all");
+    useState("Semua");
+  const [search, setSearch] = useState("");
+  const [dropdownOpen, setDropdownOpen] =
+    useState(false);
+  const [page, setPage] = useState(0);
 
-  const [activeIndex, setActiveIndex] =
-    useState(0);
-
-  const [desktopPage, setDesktopPage] =
-    useState(0);
-
-
-  /*
-   * =========================
-   * DATA KAMAR
-   * =========================
-   */
-
+  // Data
   const activeRooms = useMemo(
     () =>
-      rooms.filter(
-        (room) => room.aktif,
-      ),
+      [...rooms]
+        .filter((room) => room.aktif)
+        .sort((a, b) => a.urutan - b.urutan),
     [rooms],
   );
 
-
-  /*
-   * Ambil daftar cabang unik
-   * dari data kamar backend.
-   */
   const branches = useMemo(() => {
-    const map = new Map<
-      number,
-      {
-        id: number;
-        nama: string;
-      }
-    >();
-
-    activeRooms.forEach((room) => {
-      if (!room.cabang) {
-        return;
-      }
-
-      map.set(
-        room.cabang.id,
-        {
-          id: room.cabang.id,
-          nama: room.cabang.nama,
-        },
+    const names = activeRooms
+      .map((room) => room.cabang?.nama)
+      .filter(
+        (name): name is string => Boolean(name),
       );
-    });
 
-    return Array.from(
-      map.values(),
-    );
+    return [
+      "Semua",
+      ...Array.from(new Set(names)),
+    ];
   }, [activeRooms]);
 
+  const filteredRooms = useMemo(() => {
+    const keyword = search
+      .trim()
+      .toLowerCase();
 
-  /*
-   * Kamar setelah difilter cabang.
-   */
-  const visibleRooms = useMemo(
-    () =>
-      selectedBranch === "all"
-        ? activeRooms
-        : activeRooms.filter(
-            (room) =>
-              room.cabang_id ===
-              selectedBranch,
-          ),
-    [
-      activeRooms,
-      selectedBranch,
-    ],
+    return activeRooms.filter((room) => {
+      const matchBranch =
+        selectedBranch === "Semua" ||
+        room.cabang?.nama === selectedBranch;
+
+      if (!matchBranch) return false;
+
+      if (!keyword) return true;
+
+      const searchableText = [
+        room.nama,
+        room.tipe,
+        room.ukuran,
+        room.deskripsi,
+        room.cabang?.nama,
+        ...(room.fasilitas ?? []),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(keyword);
+    });
+  }, [
+    activeRooms,
+    search,
+    selectedBranch,
+  ]);
+
+  const totalPages = Math.ceil(
+    filteredRooms.length / ROOMS_PER_PAGE,
   );
 
-
-  /*
-   * =========================
-   * HELPER
-   * =========================
-   */
-
-  function shortBranchName(
-    name: string,
-  ) {
-    return name
-      .replace(
-        /^Kos Bu Henny\s*-\s*/i,
-        "",
-      )
-      .trim();
-  }
-
-
-  /*
-   * =========================
-   * MOBILE / TABLET CAROUSEL
-   * =========================
-   */
-
-  function goToSlide(
-    index: number,
-  ) {
-    const total =
-      visibleRooms.length;
-
-    if (total === 0) {
-      return;
-    }
-
-    const targetIndex =
-      (
-        index +
-        total
-      ) % total;
-
-    const card =
-      cardRefs.current[
-        targetIndex
-      ];
-
-    if (!card) {
-      return;
-    }
-
-    card.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center",
-    });
-
-    setActiveIndex(
-      targetIndex,
-    );
-  }
-
-
-  function previousRoom() {
-    goToSlide(
-      activeIndex - 1,
-    );
-  }
-
-
-  function nextRoom() {
-    goToSlide(
-      activeIndex + 1,
-    );
-  }
-
-
-  /*
-   * Saat user swipe manual,
-   * cari card yang paling dekat
-   * dengan tengah viewport slider.
-   */
-  function handleScroll() {
-    const slider =
-      sliderRef.current;
-
-    if (!slider) {
-      return;
-    }
-
-    const sliderRect =
-      slider.getBoundingClientRect();
-
-    const center =
-      sliderRect.left +
-      sliderRect.width / 2;
-
-    let nearestIndex = 0;
-    let nearestDistance =
-      Infinity;
-
-    cardRefs.current.forEach(
-      (card, index) => {
-        if (!card) {
-          return;
-        }
-
-        const cardRect =
-          card.getBoundingClientRect();
-
-        const cardCenter =
-          cardRect.left +
-          cardRect.width / 2;
-
-        const distance =
-          Math.abs(
-            center -
-            cardCenter,
-          );
-
-        if (
-          distance <
-          nearestDistance
-        ) {
-          nearestDistance =
-            distance;
-
-          nearestIndex =
-            index;
-        }
-      },
-    );
-
-    setActiveIndex(
-      nearestIndex,
-    );
-  }
-
-
-  /*
-   * =========================
-   * DESKTOP
-   * =========================
-   */
-
-  const desktopTotalPages =
-    Math.max(
-      1,
-      Math.ceil(
-        visibleRooms.length /
-        DESKTOP_PER_PAGE,
-      ),
-    );
-
-
-  const desktopRooms =
-    visibleRooms.slice(
-      desktopPage *
-        DESKTOP_PER_PAGE,
-
-      desktopPage *
-        DESKTOP_PER_PAGE +
-        DESKTOP_PER_PAGE,
-    );
-
-
-  function previousDesktopPage() {
-    setDesktopPage(
-      (current) =>
-        (
-          current -
-          1 +
-          desktopTotalPages
-        ) %
-        desktopTotalPages,
-    );
-  }
-
-
-  function nextDesktopPage() {
-    setDesktopPage(
-      (current) =>
-        (
-          current +
-          1
-        ) %
-        desktopTotalPages,
-    );
-  }
-
-
-  /*
-   * Saat filter cabang berubah:
-   * reset mobile dan desktop.
-   */
+  // Dropdown
   useEffect(() => {
-    setActiveIndex(0);
-    setDesktopPage(0);
+    const closeDropdown = (
+      event: MouseEvent,
+    ) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(
+          event.target as Node,
+        )
+      ) {
+        setDropdownOpen(false);
+      }
+    };
 
-    cardRefs.current = [];
+    const closeWithEscape = (
+      event: KeyboardEvent,
+    ) => {
+      if (event.key === "Escape") {
+        setDropdownOpen(false);
+      }
+    };
 
-    sliderRef.current?.scrollTo({
+    document.addEventListener(
+      "mousedown",
+      closeDropdown,
+    );
+
+    document.addEventListener(
+      "keydown",
+      closeWithEscape,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        closeDropdown,
+      );
+
+      document.removeEventListener(
+        "keydown",
+        closeWithEscape,
+      );
+    };
+  }, []);
+
+  // Search
+  const changeSearch = (value: string) => {
+    setSearch(value);
+    setPage(0);
+
+    carouselRef.current?.scrollTo({
       left: 0,
       behavior: "smooth",
     });
-  }, [selectedBranch]);
+  };
 
+  // Filter
+  const changeBranch = (branch: string) => {
+    setSelectedBranch(branch);
+    setDropdownOpen(false);
+    setPage(0);
 
-  if (
-    activeRooms.length === 0
-  ) {
+    carouselRef.current?.scrollTo({
+      left: 0,
+      behavior: "smooth",
+    });
+  };
+
+  const resetFilter = () => {
+    setSearch("");
+    setSelectedBranch("Semua");
+    setDropdownOpen(false);
+    setPage(0);
+
+    carouselRef.current?.scrollTo({
+      left: 0,
+      behavior: "smooth",
+    });
+  };
+
+  // Mobile Navigation
+  const scrollMobile = (
+    direction: "left" | "right",
+  ) => {
+    const carousel = carouselRef.current;
+
+    if (!carousel) return;
+
+    const card =
+      carousel.firstElementChild as HTMLElement | null;
+
+    const distance = card
+      ? card.offsetWidth + 12
+      : carousel.clientWidth * 0.85;
+
+    carousel.scrollBy({
+      left:
+        direction === "right"
+          ? distance
+          : -distance,
+      behavior: "smooth",
+    });
+  };
+
+  // Desktop Navigation
+  const previousPage = () => {
+    setPage((current) =>
+      Math.max(current - 1, 0),
+    );
+  };
+
+  const nextPage = () => {
+    setPage((current) =>
+      Math.min(
+        current + 1,
+        totalPages - 1,
+      ),
+    );
+  };
+
+  if (!activeRooms.length) {
     return null;
   }
-
 
   return (
     <section
       id="kamar"
-      className="
-        overflow-hidden
-        bg-white
-
-        py-16
-
-        sm:py-20
-        lg:py-24
-      "
+      className="overflow-hidden bg-(--cream) py-16 sm:py-20 lg:py-24"
     >
-      {/* =========================
-          HEADING
-      ========================== */}
       <div className="container-page">
-        <div
-          className="
-            mx-auto
-            max-w-2xl
-            text-center
-          "
-        >
-          <h2
-            className="
-              text-[clamp(2rem,5vw,3.5rem)]
-              leading-[1.05]
-              tracking-[-0.03em]
 
-              text-(--ink)
-            "
-          >
+        {/* Heading */}
+        <div className="max-w-xl">
+          <h2 className="text-[clamp(2rem,7vw,3.5rem)] leading-[1.05] tracking-[-0.03em] text-(--ink)">
             Pilihan kamar
           </h2>
 
-          <p
-            className="
-              mx-auto
-              mt-3
-              max-w-xl
-
-              text-sm
-              leading-6
-              text-(--stone)
-
-              sm:text-base
-              sm:leading-7
-            "
-          >
-            Temukan kamar sesuai
-            kebutuhan dan lokasi
-            yang kamu inginkan.
+          <p className="mt-3 max-w-lg text-sm leading-6 text-(--stone) sm:text-base">
+            Lihat pilihan kamar yang tersedia
+            dan sesuaikan dengan kebutuhanmu.
           </p>
         </div>
 
+        {/* Search & Filter */}
+        <div className="mt-6 grid gap-3 lg:grid-cols-[minmax(280px,360px)_1fr] lg:items-center">
 
-        {/* =========================
-            FILTER CABANG
-        ========================== */}
-        {branches.length > 1 && (
-          <div
-            className="
-              mt-7
+          {/* Search */}
+          <SearchBar
+            value={search}
+            onChange={changeSearch}
+            placeholder="Cari kamar, fasilitas, atau tipe..."
+          />
 
-              overflow-x-auto
-              pb-2
-
-              [scrollbar-width:none]
-              [&::-webkit-scrollbar]:hidden
-
-              sm:mt-8
-            "
-          >
+          {/* Mobile Dropdown */}
+          {branches.length > 2 && (
             <div
-              className="
-                flex
-                min-w-max
-                items-center
-                gap-2
-
-                lg:justify-center
-              "
+              ref={dropdownRef}
+              className="relative lg:hidden"
             >
               <button
                 type="button"
                 onClick={() =>
-                  setSelectedBranch(
-                    "all",
+                  setDropdownOpen(
+                    (current) => !current,
                   )
                 }
-                aria-pressed={
-                  selectedBranch ===
-                  "all"
-                }
-                className={`
-                  min-h-10
-
-                  rounded-[8px]
-                  border
-
-                  px-4
-
+                aria-expanded={dropdownOpen}
+                className="
+                  flex min-h-11 w-full
+                  items-center justify-between
+                  gap-4 rounded-lg
+                  border border-(--line)
+                  bg-white px-4
                   text-sm
-                  font-medium
-
-                  transition-colors
-
-                  ${
-                    selectedBranch ===
-                    "all"
-                      ? `
-                        border-(--accent)
-                        bg-(--accent)
-                        !text-white
-                      `
-                      : `
-                        border-(--line)
-                        bg-white
-                        text-(--stone)
-
-                        hover:border-(--accent)
-                        hover:text-(--accent)
-                      `
-                  }
-                `}
+                  transition
+                  hover:border-(--line-strong)
+                "
               >
-                Semua
+                <span className="text-(--stone)">
+                  Cabang
+                </span>
+
+                <span className="ml-auto truncate font-medium text-(--ink)">
+                  {selectedBranch === "Semua"
+                    ? "Semua cabang"
+                    : selectedBranch}
+                </span>
+
+                <ChevronDown
+                  size={17}
+                  className={`shrink-0 text-(--stone) transition-transform duration-200 ${
+                    dropdownOpen
+                      ? "rotate-180"
+                      : ""
+                  }`}
+                />
               </button>
 
+              {/* Dropdown Menu */}
+              {dropdownOpen && (
+                <div
+                  className="
+                    absolute inset-x-0 top-full
+                    z-30 mt-2
+                    max-h-64 overflow-y-auto
+                    rounded-lg
+                    border border-(--line)
+                    bg-white p-1.5
+                    shadow-[0_12px_30px_rgba(50,45,41,0.12)]
+                  "
+                >
+                  {branches.map((branch) => {
+                    const active =
+                      selectedBranch === branch;
 
-              {branches.map(
-                (branch) => {
-                  const isActive =
-                    selectedBranch ===
-                    branch.id;
-
-                  return (
-                    <button
-                      key={
-                        branch.id
-                      }
-                      type="button"
-                      onClick={() =>
-                        setSelectedBranch(
-                          branch.id,
-                        )
-                      }
-                      aria-pressed={
-                        isActive
-                      }
-                      className={`
-                        min-h-10
-
-                        rounded-[8px]
-                        border
-
-                        px-4
-
-                        text-sm
-                        font-medium
-
-                        transition-colors
-
-                        ${
-                          isActive
-                            ? `
-                              border-(--accent)
-                              bg-(--accent)
-                              !text-white
-                            `
-                            : `
-                              border-(--line)
-                              bg-white
-                              text-(--stone)
-
-                              hover:border-(--accent)
-                              hover:text-(--accent)
-                            `
+                    return (
+                      <button
+                        key={branch}
+                        type="button"
+                        onClick={() =>
+                          changeBranch(branch)
                         }
-                      `}
-                    >
-                      {shortBranchName(
-                        branch.nama,
-                      )}
-                    </button>
-                  );
-                },
+                        className={`
+                          flex min-h-11 w-full
+                          items-center justify-between
+                          gap-3 rounded-md
+                          px-3 text-left
+                          text-sm transition
+                          ${
+                            active
+                              ? "bg-(--cream) font-semibold text-(--ink)"
+                              : "font-medium text-(--ink-soft) hover:bg-(--cream)"
+                          }
+                        `}
+                      >
+                        <span className="truncate">
+                          {branch === "Semua"
+                            ? "Semua cabang"
+                            : branch}
+                        </span>
+
+                        {active && (
+                          <Check
+                            size={17}
+                            className="shrink-0 text-(--accent)"
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               )}
+            </div>
+          )}
+
+          {/* Desktop Tabs */}
+          {branches.length > 2 && (
+            <div className="hidden flex-wrap justify-end gap-2 lg:flex">
+              {branches.map((branch) => {
+                const active =
+                  selectedBranch === branch;
+
+                return (
+                  <button
+                    key={branch}
+                    type="button"
+                    onClick={() =>
+                      changeBranch(branch)
+                    }
+                    className={`min-h-10 rounded-lg border px-4 text-sm font-medium transition ${
+                      active
+                        ? "border-(--ink) bg-(--ink) text-white"
+                        : "border-(--line) bg-white text-(--ink) hover:border-(--line-strong)"
+                    }`}
+                  >
+                    {branch === "Semua"
+                      ? "Semua"
+                      : branch}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Filter Status */}
+        {(search ||
+          selectedBranch !== "Semua") && (
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-(--stone)">
+              {filteredRooms.length} kamar ditemukan
+            </p>
+
+            <button
+              type="button"
+              onClick={resetFilter}
+              className="text-xs font-semibold text-(--accent) transition hover:text-(--accent-dark)"
+            >
+              Reset filter
+            </button>
+          </div>
+        )}
+
+        {/* Empty Result */}
+        {!filteredRooms.length && (
+          <div className="mt-8 rounded-[10px] border border-(--line) bg-white px-5 py-10 text-center">
+            <p className="font-medium text-(--ink)">
+              Kamar tidak ditemukan
+            </p>
+
+            <p className="mt-1 text-sm text-(--stone)">
+              Coba ubah pencarian atau cabang.
+            </p>
+          </div>
+        )}
+
+        {/* Mobile Carousel */}
+        {filteredRooms.length > 0 && (
+          <div className="relative mt-8 lg:hidden">
+
+            {/* Arrows */}
+            {filteredRooms.length > 1 && (
+              <div className="mb-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    scrollMobile("left")
+                  }
+                  aria-label="Kamar sebelumnya"
+                  className="
+                    grid size-11 place-items-center
+                    rounded-lg
+                    border border-(--line)
+                    bg-white text-(--ink)
+                    transition active:scale-95
+                  "
+                >
+                  <ChevronLeft size={19} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    scrollMobile("right")
+                  }
+                  aria-label="Kamar berikutnya"
+                  className="
+                    grid size-11 place-items-center
+                    rounded-lg
+                    border border-(--line)
+                    bg-white text-(--ink)
+                    transition active:scale-95
+                  "
+                >
+                  <ChevronRight size={19} />
+                </button>
+              </div>
+            )}
+
+            {/* Mobile Track */}
+            <div
+              ref={carouselRef}
+              className="
+                mx-[-8vw]
+                flex
+                snap-x
+                snap-mandatory
+                gap-3
+                overflow-x-auto
+                scroll-smooth
+                overscroll-x-contain
+                px-[16vw]
+                pb-2
+                scrollbar-none
+                [&::-webkit-scrollbar]:hidden
+              "
+            >
+              {filteredRooms.map((room) => (
+                <div
+                  key={room.id}
+                  className="
+                    w-[84vw]
+                    max-w-80
+                    shrink-0
+                    snap-center
+                    snap-always
+                  "
+                >
+                  <RoomCard
+                    room={room}
+                    whatsappUrl={whatsappUrl}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         )}
-      </div>
 
+        {/* Desktop Carousel */}
+        {filteredRooms.length > 0 && (
+          <div className="mt-10 hidden lg:block">
 
-      {/* =========================
-          EMPTY RESULT
-      ========================== */}
-      {visibleRooms.length ===
-        0 && (
-        <div
-          className="
-            container-page
-
-            mt-12
-            text-center
-          "
-        >
-          <p
-            className="
-              text-sm
-              text-(--stone)
-            "
-          >
-            Belum ada kamar
-            pada cabang ini.
-          </p>
-        </div>
-      )}
-
-
-      {/* =================================
-          MOBILE / TABLET
-      ================================= */}
-      {visibleRooms.length >
-        0 && (
-        <div
-          className="
-            relative
-
-            mt-9
-
-            lg:hidden
-          "
-        >
-          {/* Fade kiri */}
-          <div
-            className="
-              pointer-events-none
-
-              absolute
-              inset-y-0
-              left-0
-
-              z-20
-
-              w-[7%]
-
-              bg-linear-to-r
-              from-white
-              via-white/60
-              to-transparent
-            "
-          />
-
-
-          {/* Fade kanan */}
-          <div
-            className="
-              pointer-events-none
-
-              absolute
-              inset-y-0
-              right-0
-
-              z-20
-
-              w-[7%]
-
-              bg-linear-to-l
-              from-white
-              via-white/60
-              to-transparent
-            "
-          />
-
-
-          {/* Previous */}
-          {visibleRooms.length >
-            1 && (
-            <button
-              type="button"
-              onClick={
-                previousRoom
-              }
-              aria-label="Kamar sebelumnya"
-              className="
-                absolute
-                left-2
-                top-1/2
-
-                z-30
-
-                inline-flex
-                size-11
-
-                -translate-y-1/2
-
-                items-center
-                justify-center
-
-                rounded-[8px]
-                border
-                border-(--line)
-
-                bg-white/95
-                text-(--ink)
-
-                shadow-sm
-                backdrop-blur-sm
-
-                transition
-
-                active:scale-95
-
-                sm:left-4
-              "
-            >
-              <ChevronLeft
-                size={20}
-                aria-hidden="true"
-              />
-            </button>
-          )}
-
-
-          {/* =========================
-              NATIVE SLIDER
-          ========================== */}
-          <div
-            ref={
-              sliderRef
-            }
-            onScroll={
-              handleScroll
-            }
-            className="
-              flex
-
-              snap-x
-              snap-proximity
-
-              touch-pan-x
-              overscroll-x-contain
-
-              items-stretch
-
-              gap-3
-
-              overflow-x-auto
-              overflow-y-hidden
-
-              scroll-smooth
-
-              pb-5
-
-              [scrollbar-width:none]
-              [&::-webkit-scrollbar]:hidden
-
-              sm:gap-4
-            "
-          >
-            {/* Spacer kiri */}
-            <div
-              aria-hidden="true"
-              className="
-                w-[9%]
-                shrink-0
-
-                sm:w-[19%]
-
-                md:w-[27%]
-              "
-            />
-
-
-            {visibleRooms.map(
-              (
-                room,
-                index,
-              ) => {
-                const isActive =
-                  activeIndex ===
-                  index;
-
-                return (
-                  <div
-                    key={
-                      room.id
-                    }
-                    ref={(
-                      element,
-                    ) => {
-                      cardRefs.current[
-                        index
-                      ] =
-                        element;
-                    }}
-                    className={`
-                      w-[82%]
-                      shrink-0
-
-                      snap-center
-
-                      transition-all
-                      duration-300
-                      ease-out
-
-                      sm:w-[62%]
-
-                      md:w-[46%]
-
-                      ${
-                        isActive
-                          ? `
-                            scale-100
-                            opacity-100
-                            blur-0
-                          `
-                          : `
-                            scale-[0.96]
-                            opacity-60
-                            blur-[0.35px]
-                          `
-                      }
-                    `}
-                  >
-                    <RoomCard
-                      room={
-                        room
-                      }
-                      settings={
-                        settings
-                      }
-                    />
-                  </div>
-                );
-              },
-            )}
-
-
-            {/* Spacer kanan */}
-            <div
-              aria-hidden="true"
-              className="
-                w-[9%]
-                shrink-0
-
-                sm:w-[19%]
-
-                md:w-[27%]
-              "
-            />
-          </div>
-
-
-          {/* Next */}
-          {visibleRooms.length >
-            1 && (
-            <button
-              type="button"
-              onClick={
-                nextRoom
-              }
-              aria-label="Kamar berikutnya"
-              className="
-                absolute
-                right-2
-                top-1/2
-
-                z-30
-
-                inline-flex
-                size-11
-
-                -translate-y-1/2
-
-                items-center
-                justify-center
-
-                rounded-[8px]
-                border
-                border-(--line)
-
-                bg-white/95
-                text-(--ink)
-
-                shadow-sm
-                backdrop-blur-sm
-
-                transition
-
-                active:scale-95
-
-                sm:right-4
-              "
-            >
-              <ChevronRight
-                size={20}
-                aria-hidden="true"
-              />
-            </button>
-          )}
-
-
-          {/* Indicators mobile */}
-          {visibleRooms.length >
-            1 && (
-            <div
-              className="
-                mt-2
-
-                flex
-                items-center
-                justify-center
-
-                gap-2
-              "
-            >
-              {visibleRooms.map(
-                (
-                  room,
-                  index,
-                ) => (
-                  <button
-                    key={
-                      room.id
-                    }
-                    type="button"
-                    onClick={() =>
-                      goToSlide(
-                        index,
-                      )
-                    }
-                    aria-label={`Lihat ${room.nama}`}
-                    aria-current={
-                      activeIndex ===
-                      index
-                        ? "true"
-                        : undefined
-                    }
-                    className={`
-                      h-1.5
-
-                      rounded-full
-
-                      transition-all
-                      duration-300
-
-                      ${
-                        activeIndex ===
-                        index
-                          ? `
-                            w-7
-                            bg-(--accent)
-                          `
-                          : `
-                            w-1.5
-                            bg-(--ink)/20
-                          `
-                      }
-                    `}
-                  />
-                ),
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-
-      {/* =================================
-          DESKTOP
-      ================================= */}
-      {visibleRooms.length >
-        0 && (
-        <div
-          className="
-            container-page
-
-            mt-12
-
-            hidden
-
-            lg:block
-          "
-        >
-          <div
-            className="
-              relative
-            "
-          >
-            {/* Previous desktop */}
-            {desktopTotalPages >
-              1 && (
-              <button
-                type="button"
-                onClick={
-                  previousDesktopPage
-                }
-                aria-label="Halaman kamar sebelumnya"
+            {/* Track */}
+            <div className="overflow-hidden">
+              <div
                 className="
-                  absolute
-                  -left-4
-                  top-1/2
-
-                  z-20
-
-                  inline-flex
-                  size-11
-
-                  -translate-x-full
-                  -translate-y-1/2
-
-                  items-center
-                  justify-center
-
-                  rounded-[8px]
-                  border
-                  border-(--line)
-
-                  bg-white
-                  text-(--ink)
-
-                  shadow-sm
-
-                  transition-colors
-
-                  hover:border-(--accent)
-                  hover:text-(--accent)
-
-                  xl:-left-6
+                  flex
+                  transition-transform
+                  duration-500
+                  ease-[cubic-bezier(0.22,1,0.36,1)]
                 "
+                style={{
+                  transform: `translateX(-${page * 100}%)`,
+                }}
               >
-                <ChevronLeft
-                  size={20}
-                  aria-hidden="true"
-                />
-              </button>
-            )}
+                {Array.from({
+                  length: totalPages,
+                }).map((_, pageIndex) => {
+                  const start =
+                    pageIndex *
+                    ROOMS_PER_PAGE;
 
+                  const pageRooms =
+                    filteredRooms.slice(
+                      start,
+                      start + ROOMS_PER_PAGE,
+                    );
 
-            {/* Desktop cards */}
-            <div
-              className="
-                grid
-                grid-cols-3
+                  return (
+                    <div
+                      key={pageIndex}
+                      className="w-full shrink-0"
+                    >
+                      <div className="grid grid-cols-3 gap-5">
+                        {pageRooms.map(
+                          (room) => (
+                            <RoomCard
+                              key={room.id}
+                              room={room}
+                              whatsappUrl={
+                                whatsappUrl
+                              }
+                              desktop
+                            />
+                          ),
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
-                items-stretch
+            {/* Desktop Navigation */}
+            {totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-between border-t border-(--line) pt-5">
+                <p className="text-sm text-(--stone)">
+                  {page + 1} dari{" "}
+                  {totalPages}
+                </p>
 
-                gap-5
-
-                xl:gap-6
-              "
-            >
-              {desktopRooms.map(
-                (room) => (
-                  <div
-                    key={
-                      room.id
-                    }
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={previousPage}
+                    disabled={page === 0}
+                    aria-label="Halaman kamar sebelumnya"
                     className="
-                      min-w-0
+                      grid size-11 place-items-center
+                      rounded-lg
+                      border border-(--line)
+                      bg-white text-(--ink)
+                      transition
+                      hover:border-(--line-strong)
+                      disabled:cursor-not-allowed
+                      disabled:opacity-35
                     "
                   >
-                    <RoomCard
-                      room={
-                        room
-                      }
-                      settings={
-                        settings
-                      }
-                      compact
-                    />
-                  </div>
-                ),
-              )}
-            </div>
+                    <ChevronLeft size={19} />
+                  </button>
 
-
-            {/* Next desktop */}
-            {desktopTotalPages >
-              1 && (
-              <button
-                type="button"
-                onClick={
-                  nextDesktopPage
-                }
-                aria-label="Halaman kamar berikutnya"
-                className="
-                  absolute
-                  -right-4
-                  top-1/2
-
-                  z-20
-
-                  inline-flex
-                  size-11
-
-                  translate-x-full
-                  -translate-y-1/2
-
-                  items-center
-                  justify-center
-
-                  rounded-[8px]
-                  border
-                  border-(--line)
-
-                  bg-white
-                  text-(--ink)
-
-                  shadow-sm
-
-                  transition-colors
-
-                  hover:border-(--accent)
-                  hover:text-(--accent)
-
-                  xl:-right-6
-                "
-              >
-                <ChevronRight
-                  size={20}
-                  aria-hidden="true"
-                />
-              </button>
-            )}
-          </div>
-
-
-          {/* Desktop indicators */}
-          {desktopTotalPages >
-            1 && (
-            <div
-              className="
-                mt-7
-
-                flex
-                items-center
-                justify-center
-
-                gap-2
-              "
-            >
-              {Array.from({
-                length:
-                  desktopTotalPages,
-              }).map(
-                (
-                  _,
-                  index,
-                ) => (
                   <button
-                    key={
-                      index
-                    }
                     type="button"
-                    onClick={() =>
-                      setDesktopPage(
-                        index,
-                      )
+                    onClick={nextPage}
+                    disabled={
+                      page === totalPages - 1
                     }
-                    aria-label={`Halaman kamar ${index + 1}`}
-                    aria-current={
-                      desktopPage ===
-                      index
-                        ? "true"
-                        : undefined
-                    }
-                    className={`
-                      h-1.5
+                    aria-label="Halaman kamar berikutnya"
+                    className="
+                      grid size-11 place-items-center
+                      rounded-lg
+                      border border-(--line)
+                      bg-white text-(--ink)
+                      transition
+                      hover:border-(--line-strong)
+                      disabled:cursor-not-allowed
+                      disabled:opacity-35
+                    "
+                  >
+                    <ChevronRight size={19} />
+                  </button>
+                </div>
+              </div>
+            )}
 
-                      rounded-full
+          </div>
+        )}
 
-                      transition-all
-                      duration-300
-
-                      ${
-                        desktopPage ===
-                        index
-                          ? `
-                            w-7
-                            bg-(--accent)
-                          `
-                          : `
-                            w-1.5
-                            bg-(--ink)/20
-                          `
-                      }
-                    `}
-                  />
-                ),
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      </div>
     </section>
   );
 }

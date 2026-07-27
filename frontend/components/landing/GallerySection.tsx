@@ -1,140 +1,205 @@
 "use client";
 
+import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
-import { imageUrl } from "@/lib/api";
-import type { Dokumentasi, Konten } from "@/lib/types";
+import { useState } from "react";
 
-export default function GallerySection({
-  items,
-  content,
-}: {
+import { mediaUrl } from "@/lib/media";
+import type { Dokumentasi } from "@/lib/types";
+
+type GalleryProps = {
   items: Dokumentasi[];
-  content?: Konten;
-}) {
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
+};
 
-  const visibleItems = useMemo(
-    () =>
-      items
-        .filter((item) => item.aktif !== false && Boolean(item.path_foto))
-        .sort((a, b) => (a.urutan ?? 0) - (b.urutan ?? 0)),
-    [items],
-  );
+export default function GallerySection({ items }: GalleryProps) {
+  const gallery = [...items]
+    .filter((item) => item.aktif)
+    .sort((a, b) => a.urutan - b.urutan);
 
-  if (!visibleItems.length) return null;
+  const [active, setActive] = useState(0);
 
-  const goToSlide = (index: number) => {
-    const slider = sliderRef.current;
-    if (!slider) return;
+  if (!gallery.length) return null;
 
-    const nextIndex = (index + visibleItems.length) % visibleItems.length;
-    slider.scrollTo({
-      left: slider.clientWidth * nextIndex,
-      behavior: "smooth",
-    });
-    setActiveIndex(nextIndex);
+  const current = gallery[active];
+  const desktopItems = gallery.slice(0, 5);
+
+  // Navigasi Mobile
+  const previous = () => {
+    setActive((index) =>
+      index === 0 ? gallery.length - 1 : index - 1,
+    );
   };
 
-  const handleScroll = () => {
-    const slider = sliderRef.current;
-    if (!slider || slider.clientWidth === 0) return;
-
-    const index = Math.round(slider.scrollLeft / slider.clientWidth);
-    if (index >= 0 && index < visibleItems.length) setActiveIndex(index);
+  const next = () => {
+    setActive((index) =>
+      index === gallery.length - 1 ? 0 : index + 1,
+    );
   };
 
   return (
-    <section id="galeri" className="bg-[var(--cream)] pb-16 pt-8 sm:pb-20 sm:pt-12 lg:pb-24 lg:pt-16">
+    <section
+      id="dokumentasi"
+      className="bg-white py-16 sm:py-20 lg:py-24"
+    >
       <div className="container-page">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="section-title mx-auto">
-            {content?.judul || "Dokumentasi Kos Bu Henny"}
+
+        {/* Heading */}
+        <div className="mx-auto max-w-xl text-center">
+          <h2 className="text-[clamp(2rem,7vw,3.5rem)] leading-[1.05] tracking-[-0.03em] text-(--ink)">
+            Lihat lebih dekat
           </h2>
-          {content?.isi && (
-            <p className="mx-auto mt-4 max-w-xl text-[15px] leading-7 text-[var(--stone)]">
-              {content.isi}
-            </p>
-          )}
+
+          <p className="mt-3 text-sm leading-6 text-(--stone) sm:text-base">
+            Dokumentasi kamar dan suasana Kos Bu Henny.
+          </p>
         </div>
 
-        <div className="relative mx-auto mt-8 max-w-5xl sm:mt-10">
-          <div
-            ref={sliderRef}
-            onScroll={handleScroll}
-            className="gallery-rail flex aspect-[4/3] snap-x snap-mandatory overflow-x-auto rounded-[10px] bg-[var(--parchment)] sm:aspect-[16/9] lg:aspect-[16/8]"
-            aria-label="Galeri dokumentasi Kos Bu Henny"
-          >
-            {visibleItems.map((item) => {
-              const src = imageUrl(item.path_foto);
-              if (!src) return null;
+        {/* Gallery Mobile */}
+        <div className="mt-8 lg:hidden">
+          <div className="relative aspect-4/3 overflow-hidden rounded-[10px] bg-(--parchment)">
+            {mediaUrl(current.path_foto) && (
+              <Image
+                src={mediaUrl(current.path_foto)!}
+                alt={
+                  current.teks_alt ||
+                  current.caption ||
+                  "Dokumentasi Kos Bu Henny"
+                }
+                fill
+                sizes="100vw"
+                className="object-cover"
+              />
+            )}
 
-              return (
-                <figure key={item.id} className="relative min-w-full snap-center overflow-hidden">
-                  <img
-                    src={src}
-                    alt={item.teks_alt || item.caption || "Dokumentasi Kos Bu Henny"}
-                    className="h-full w-full object-cover"
-                  />
+            {/* Counter */}
+            {gallery.length > 1 && (
+              <span className="absolute right-3 top-3 rounded-md bg-black/45 px-2 py-1 text-[11px] font-medium text-white">
+                {active + 1} / {gallery.length}
+              </span>
+            )}
 
-                  {item.caption && (
-                    <>
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-linear-to-t from-[rgba(50,45,41,.78)] to-transparent" />
-                      <figcaption className="absolute inset-x-0 bottom-0 p-5 text-left sm:p-6">
-                        <p className="max-w-xl font-editorial text-[20px] leading-tight text-white sm:text-[24px]">
-                          {item.caption}
-                        </p>
-                      </figcaption>
-                    </>
-                  )}
-                </figure>
-              );
-            })}
+            {/* Panah */}
+            {gallery.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={previous}
+                  aria-label="Foto sebelumnya"
+                  className="absolute left-3 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-lg bg-black/40 text-white transition active:scale-95"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={next}
+                  aria-label="Foto berikutnya"
+                  className="absolute right-3 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-lg bg-black/40 text-white transition active:scale-95"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </>
+            )}
+
+            {/* Caption */}
+            {current.caption && (
+              <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/65 to-transparent px-4 pb-4 pt-12">
+                <p className="text-sm font-medium text-white">
+                  {current.caption}
+                </p>
+              </div>
+            )}
           </div>
 
-          {visibleItems.length > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={() => goToSlide(activeIndex - 1)}
-                aria-label="Foto sebelumnya"
-                className="absolute left-2 top-1/2 z-10 grid size-11 -translate-y-1/2 place-items-center rounded-lg border border-white/30 bg-[rgba(50,45,41,.34)] text-white backdrop-blur-md transition-colors hover:bg-[rgba(50,45,41,.58)] sm:left-4"
-              >
-                <ChevronLeft size={20} aria-hidden="true" />
-              </button>
+          {/* Thumbnail */}
+          {gallery.length > 1 && (
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
+              {gallery.map((item, index) => {
+                const src = mediaUrl(item.path_foto);
 
-              <button
-                type="button"
-                onClick={() => goToSlide(activeIndex + 1)}
-                aria-label="Foto berikutnya"
-                className="absolute right-2 top-1/2 z-10 grid size-11 -translate-y-1/2 place-items-center rounded-lg border border-white/30 bg-[rgba(50,45,41,.34)] text-white backdrop-blur-md transition-colors hover:bg-[rgba(50,45,41,.58)] sm:right-4"
-              >
-                <ChevronRight size={20} aria-hidden="true" />
-              </button>
-            </>
+                if (!src) return null;
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setActive(index)}
+                    aria-label={
+                      item.caption ||
+                      `Lihat foto ${index + 1}`
+                    }
+                    className={`relative h-17 w-22 shrink-0 overflow-hidden rounded-lg border-2 transition ${
+                      active === index
+                        ? "border-(--accent) opacity-100"
+                        : "border-transparent opacity-55"
+                    }`}
+                  >
+                    <Image
+                      src={src}
+                      alt=""
+                      fill
+                      sizes="88px"
+                      className="object-cover"
+                    />
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
 
-        {visibleItems.length > 1 && (
-          <div className="mt-4 flex items-center justify-center gap-2" aria-label="Navigasi galeri">
-            {visibleItems.map((item, index) => (
-              <button
+        {/* Gallery Desktop */}
+        <div className="mt-10 hidden h-130 grid-cols-[1.35fr_1fr] gap-3 lg:grid">
+          <GalleryImage item={desktopItems[0]} />
+
+          <div className="grid grid-cols-2 grid-rows-2 gap-3">
+            {desktopItems.slice(1).map((item) => (
+              <GalleryImage
                 key={item.id}
-                type="button"
-                onClick={() => goToSlide(index)}
-                aria-label={`Lihat foto ${index + 1}`}
-                aria-current={activeIndex === index ? "true" : undefined}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  activeIndex === index
-                    ? "w-7 bg-[var(--accent)]"
-                    : "w-1.5 bg-[var(--ink)]/20 hover:bg-[var(--ink)]/40"
-                }`}
+                item={item}
               />
             ))}
           </div>
-        )}
+        </div>
+
       </div>
     </section>
+  );
+}
+
+// Gambar Desktop
+function GalleryImage({
+  item,
+}: {
+  item?: Dokumentasi;
+}) {
+  if (!item) {
+    return (
+      <div className="rounded-[10px] bg-(--parchment)" />
+    );
+  }
+
+  const src = mediaUrl(item.path_foto);
+
+  if (!src) {
+    return (
+      <div className="rounded-[10px] bg-(--parchment)" />
+    );
+  }
+
+  return (
+    <div className="relative overflow-hidden rounded-[10px] bg-(--parchment)">
+      <Image
+        src={src}
+        alt={
+          item.teks_alt ||
+          item.caption ||
+          "Dokumentasi Kos Bu Henny"
+        }
+        fill
+        sizes="50vw"
+        className="object-cover transition-transform duration-500 hover:scale-[1.02]"
+      />
+    </div>
   );
 }

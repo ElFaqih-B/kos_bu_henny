@@ -1,127 +1,110 @@
-import { ArrowDownRight, MessageCircle } from "lucide-react";
-import { imageUrl, rupiah } from "@/lib/api";
-import type { Pengaturan } from "@/lib/types";
-
-type HeroStats = {
-  roomTypes: number;
-  availableRooms: number;
-  branches: number;
-  startingPrice: number | null;
+import Image from "next/image";
+type HeroStat = {
+  label: string;
+  value: string;
 };
 
-type HeroSectionProps = {
-  settings: Pengaturan;
-  whatsapp: string | null;
-  stats: HeroStats;
-  fallbackImage: string | null;
+type HeroProps = {
+  imageUrl: string;
+  headline: string;
+  subheadline: string;
+
+  primaryLabel: string;
+  primaryHref: string;
+
+  secondaryLabel?: string;
+  secondaryHref?: string;
+
+  stats?: HeroStat[];
 };
 
 export default function HeroSection({
-  settings,
-  whatsapp,
-  stats,
-  fallbackImage,
-}: HeroSectionProps) {
-  const hero = imageUrl(settings.hero_image) || imageUrl(fallbackImage);
-
-  const facts = [
-    {
-      label: "Harga mulai",
-      value: stats.startingPrice !== null ? rupiah(stats.startingPrice) : "Belum tersedia",
-    },
-    {
-      label: "Pilihan kamar",
-      value: stats.roomTypes > 0 ? `${stats.roomTypes} tipe` : "Belum tersedia",
-    },
-    {
-      label: "Kamar tersedia",
-      value: stats.roomTypes > 0 ? `${stats.availableRooms} kamar` : "Belum tersedia",
-    },
-    {
-      label: "Lokasi",
-      value: stats.branches > 0 ? `${stats.branches} cabang` : "Belum tersedia",
-    },
-  ];
-
+  imageUrl,
+  headline,
+  subheadline,
+  primaryLabel,
+  primaryHref,
+  secondaryLabel,
+  secondaryHref,
+  stats = [],
+}: HeroProps) {
   return (
-    <section
-      id="beranda"
-      className="relative mb-24 min-h-[560px] overflow-visible bg-[var(--ink)] text-white sm:min-h-[610px] md:min-h-[660px] lg:min-h-[690px]"
-    >
-      <div className="absolute inset-0 overflow-hidden">
-        {hero ? (
-          <div
-            className="absolute inset-0 scale-[1.01] bg-cover bg-center"
-            style={{ backgroundImage: `url("${hero}")` }}
-            aria-hidden="true"
-          />
-        ) : (
-          <div className="absolute inset-0 bg-[var(--ink-soft)]" aria-hidden="true" />
-        )}
-
-        <div
-          className="absolute inset-0 bg-[linear-gradient(180deg,rgba(50,45,41,.56)_0%,rgba(50,45,41,.38)_38%,rgba(50,45,41,.58)_72%,rgba(50,45,41,.84)_100%)]"
-          aria-hidden="true"
+    <section id="beranda" className="bg-white">
+      {/* Hero Background */}
+      <div className="relative min-h-155 overflow-hidden sm:min-h-170 lg:min-h-180">
+        {/* Background Image */}
+        {imageUrl && (
+        <Image
+            src={imageUrl}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
         />
-      </div>
+        )}
+        <div className="absolute inset-0 bg-linear-to-b from-black/30 via-black/40 to-black/60" />
 
-      <div className="container-page relative z-10 flex min-h-[560px] items-start justify-center pb-28 pt-20 sm:min-h-[610px] sm:pt-24 md:min-h-[660px] md:pb-32 md:pt-28 lg:min-h-[690px] lg:pt-32">
-        <div className="mx-auto w-full max-w-[900px] text-center">
-          <h1 className="mx-auto max-w-[880px] text-balance text-[clamp(2.45rem,6vw,4.8rem)] leading-[1.02] tracking-[-0.035em] text-white">
-            {settings.hero_headline}
-          </h1>
+        {/* Hero Content */}
+        <div className="container-page relative z-10 flex min-h-155 items-center justify-center pb-24 pt-16 text-center sm:min-h-170 lg:min-h-180">
+          <div className="mx-auto max-w-195">
 
-          <p className="mx-auto mt-5 max-w-[650px] px-1 text-[14px] leading-6 text-white/84 sm:text-[15px] sm:leading-7 md:text-base">
-            {settings.hero_subheadline}
-          </p>
+            <h1 className="text-[clamp(2.8rem,10vw,5.4rem)] font-medium leading-[0.98] tracking-[-0.035em] text-white">
+              {headline}
+            </h1>
 
-          <div className="mx-auto mt-7 flex max-w-full flex-wrap items-center justify-center gap-3 sm:mt-8">
-            <a
-              href="#kamar"
-              className="btn-base btn-accent min-h-11 min-w-[160px] px-5 py-2.5 text-[13px] sm:min-h-12 sm:min-w-[178px] sm:text-sm"
-            >
-              <span className="whitespace-nowrap">{settings.hero_cta_primary}</span>
-              <ArrowDownRight size={16} strokeWidth={1.8} aria-hidden="true" />
-            </a>
+            <p className="mx-auto mt-5 max-w-155 text-sm leading-6 text-white/80 sm:text-[15px] sm:leading-7">
+              {subheadline}
+            </p>
 
-            {whatsapp && (
+            {/* CTA */}
+            <div className="mx-auto mt-7 flex max-w-110 flex-col items-center gap-2.5 sm:max-w-none sm:flex-row sm:justify-center">
+
               <a
-                href={whatsapp}
-                target="_blank"
-                rel="noreferrer"
-                className="btn-base btn-light-outline min-h-11 min-w-[160px] px-5 py-2.5 text-[13px] sm:min-h-12 sm:min-w-[178px] sm:text-sm"
+                href={primaryHref}
+                className="flex min-h-12 w-[72%] items-center justify-center rounded-lg bg-(--accent) px-5 text-sm font-semibold text-white! hover:bg-(--accent-dark) sm:w-auto sm:px-6"
               >
-                <MessageCircle size={16} strokeWidth={1.8} aria-hidden="true" />
-                <span className="whitespace-nowrap">{settings.hero_cta_secondary}</span>
+                {primaryLabel}
               </a>
-            )}
+
+              {secondaryLabel && secondaryHref && (
+                <a
+                  href={secondaryHref}
+                  className="flex min-h-12 w-[72%] items-center justify-center rounded-lg border border-white/40 bg-black/10 px-6 text-sm font-semibold text-white! hover:bg-white/10 sm:w-auto"
+                >
+                  {secondaryLabel}
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 z-20 translate-y-[44%] sm:translate-y-1/2">
-        <div className="container-page">
-          <div className="grid grid-cols-2 overflow-hidden rounded-[10px] border border-black/[0.08] bg-white shadow-[0_16px_40px_rgba(50,45,41,.14)] lg:grid-cols-4">
-            {facts.map((fact, index) => (
-              <div
-                key={fact.label}
-                className={`min-w-0 px-4 py-3.5 text-left sm:px-5 sm:py-4 md:px-6 md:py-5 ${
-                  index % 2 !== 0 ? "border-l border-[var(--line)]" : ""
-                } ${index > 1 ? "border-t border-[var(--line)] lg:border-t-0" : ""} ${
-                  index > 0 ? "lg:border-l lg:border-[var(--line)]" : ""
-                }`}
-              >
-                <span className="block text-[10px] font-medium leading-tight text-[var(--stone)] sm:text-[11px]">
-                  {fact.label}
-                </span>
-                <strong className="mt-1.5 block truncate font-editorial text-[18px] font-normal leading-tight text-[var(--ink)] sm:text-[20px] md:text-[23px]">
-                  {fact.value}
-                </strong>
-              </div>
+      {/* Info Bar */}
+        {stats.length > 0 && (
+        <div className="container-page relative z-20 -mt-13 pb-14 sm:pb-16">
+            <div className="grid grid-cols-2 overflow-hidden rounded-[10px] border border-(--line) bg-white shadow-[0_16px_40px_rgba(50,45,41,0.10)] md:grid-cols-4">
+            {stats.map((stat, index) => (
+                <div
+                key={stat.label}
+                className={`px-4 py-4 text-center sm:px-5 sm:py-5 ${
+                    index % 2 === 0 ? "border-r border-(--line)" : ""
+                } ${
+                    index < 2 ? "border-b border-(--line) md:border-b-0" : ""
+                } md:border-r md:border-(--line) md:last:border-r-0`}
+                >
+                <p className="font-(family-name:--font-fraunces) text-[11px] font-medium tracking-[0.04em] text-(--stone)">
+                    {stat.label}
+                </p>
+
+                <p className="mt-1 font-(family-name:--font-fraunces) text-[18px] font-semibold tracking-[-0.02em] text-(--ink) sm:text-xl">
+                    {stat.value}
+                </p>
+                </div>
             ))}
-          </div>
+            </div>
         </div>
-      </div>
+        )}
     </section>
   );
 }
