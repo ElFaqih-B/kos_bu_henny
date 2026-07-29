@@ -13,11 +13,14 @@ import {
 } from "lucide-react";
 
 import { mediaUrl } from "@/lib/media";
+import {
+  buildRoomWhatsappUrl,
+} from "@/lib/whatsapp";
+
 import type {
   Kamar,
   Pengaturan,
 } from "@/lib/types";
-
 
 type RoomDetailProps = {
   room: Kamar;
@@ -34,70 +37,17 @@ function formatPrice(value: number) {
 }
 
 
-function normalizeWhatsapp(
-  value?: string | null,
-) {
-  if (!value) {
-    return null;
-  }
-
-  const cleaned = value.replace(
-    /\D/g,
-    "",
-  );
-
-  if (!cleaned) {
-    return null;
-  }
-
-  if (cleaned.startsWith("0")) {
-    return `62${cleaned.slice(1)}`;
-  }
-
-  return cleaned;
-}
-
-
-function buildWhatsappUrl(
-  phone: string,
-  room: Kamar,
-) {
-  const branch =
-    room.cabang?.nama ??
-    "Kos Bu Henny";
-
-  const message = [
-    "Halo Bu Henny,",
-    "",
-    `Saya ingin menanyakan kamar ${room.nama} di ${branch}.`,
-    `Harga: ${formatPrice(room.harga_bulanan)}/${room.periode_harga}.`,
-    "",
-    "Apakah kamar ini masih tersedia?",
-  ].join("\n");
-
-  return `https://wa.me/${phone}?text=${encodeURIComponent(
-    message,
-  )}`;
-}
-
-
 export default function RoomDetail({
   room,
   settings,
 }: RoomDetailProps) {
   const branch = room.cabang;
 
-  const phone = normalizeWhatsapp(
-    branch?.nomor_whatsapp ??
-      settings.nomor_whatsapp,
+const whatsappUrl =
+  buildRoomWhatsappUrl(
+    room,
+    settings.nomor_whatsapp,
   );
-
-  const whatsappUrl = phone
-    ? buildWhatsappUrl(
-        phone,
-        room,
-      )
-    : null;
 
   const imageUrl =
     room.url_gambar
@@ -110,7 +60,7 @@ export default function RoomDetail({
   return (
     <main className="min-h-screen bg-white text-(--ink)">
       {/* Header */}
-      <header className="border-b border-black/8 bg-white">
+      <header className="sticky top-0 z-50 border-b border-black/8 bg-white">
         <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-5 md:px-8">
           <Link
             href="/"
@@ -123,7 +73,7 @@ export default function RoomDetail({
             href="/#kamar"
             className="
               flex min-h-10 items-center gap-2
-              rounded-lg border border-(--line)
+              rounded-lg
               bg-white px-3.5
               text-sm font-medium
               text-(--ink-soft)
@@ -134,13 +84,13 @@ export default function RoomDetail({
             "
           >
             <ArrowLeft size={16} />
-            Pilihan kamar
+            kembali
           </Link>
         </div>
       </header>
 
       {/* Main */}
-      <div className="mx-auto max-w-7xl px-5 py-7 md:px-8 md:py-10">
+      <div className="mx-auto max-w-7xl px-7 py-7 md:px-8 md:py-10">
         <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-12">
 
           {/* Left */}
