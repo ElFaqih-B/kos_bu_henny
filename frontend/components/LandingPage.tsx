@@ -1,8 +1,15 @@
 import Navbar from "@/components/layout/Navbar";
-import HeroSection from "./landing/HeroSection";
-import RoomSection from "./landing/RoomSection";
+import Footer from "@/components/layout/Footer";
+
 import GallerySection from "./landing/GallerySection";
-import { rupiah, whatsappUrl } from "@/lib/format";
+import HeroSection from "./landing/HeroSection";
+import LocationSection from "./landing/LocationSection";
+import RoomSection from "./landing/RoomSection";
+
+import {
+  rupiah,
+  whatsappUrl,
+} from "@/lib/format";
 import { mediaUrl } from "@/lib/media";
 import { serverGet } from "@/lib/server-api";
 
@@ -12,6 +19,7 @@ import type {
   Kamar,
   Pengaturan,
 } from "@/lib/types";
+
 
 export default async function LandingPage() {
   // Data
@@ -28,7 +36,15 @@ export default async function LandingPage() {
   ]);
 
   // Summary
-  const prices = rooms.map(
+  const activeRooms = rooms.filter(
+    (room) => room.aktif,
+  );
+
+  const activeBranches = branches.filter(
+    (branch) => branch.aktif,
+  );
+
+  const prices = activeRooms.map(
     (room) => room.harga_bulanan,
   );
 
@@ -37,7 +53,7 @@ export default async function LandingPage() {
       ? Math.min(...prices)
       : 0;
 
-  const availableRooms = rooms.reduce(
+  const availableRooms = activeRooms.reduce(
     (total, room) =>
       total + room.kamar_tersedia,
     0,
@@ -50,15 +66,21 @@ export default async function LandingPage() {
   return (
     <>
       {/* Navbar */}
-      <Navbar whatsappUrl={whatsapp} />
+      <Navbar
+        whatsappUrl={whatsapp}
+      />
 
       <main>
         {/* Hero */}
         <HeroSection
           imageUrl={
-            mediaUrl(settings.hero_image) || ""
+            mediaUrl(
+              settings.hero_image,
+            ) || ""
           }
-          headline={settings.hero_headline}
+          headline={
+            settings.hero_headline
+          }
           subheadline={
             settings.hero_subheadline
           }
@@ -75,11 +97,14 @@ export default async function LandingPage() {
           stats={[
             {
               label: "Harga mulai",
-              value: rupiah(startingPrice),
+              value:
+                startingPrice > 0
+                  ? rupiah(startingPrice)
+                  : "-",
             },
             {
               label: "Pilihan kamar",
-              value: `${rooms.length} tipe`,
+              value: `${activeRooms.length} tipe`,
             },
             {
               label: "Kamar tersedia",
@@ -87,20 +112,36 @@ export default async function LandingPage() {
             },
             {
               label: "Lokasi",
-              value: `${branches.length} cabang`,
+              value: `${activeBranches.length} cabang`,
             },
           ]}
         />
 
         {/* Gallery */}
-        <GallerySection items={galleryItems}/>
+        <GallerySection
+          items={galleryItems}
+        />
 
         {/* Rooms */}
         <RoomSection
-          rooms={rooms}
+          rooms={activeRooms}
           whatsappUrl={whatsapp}
         />
+
+        {/* Location */}
+        <LocationSection
+          branches={activeBranches}
+        />
       </main>
+
+      {/* Footer */}
+      <Footer
+        name={settings.nama_kos}
+        whatsappUrl={whatsapp}
+        instagramUrl={
+          settings.instagram_url
+        }
+      />
     </>
   );
 }

@@ -97,7 +97,7 @@ export default function RoomCard({
               <Link
                 href={detailUrl}
                 aria-label={`Lihat detail ${room.nama}`}
-                className="block h-full w-full"
+                className="relative block h-full w-full"
               >
                 <Image
                   src={image}
