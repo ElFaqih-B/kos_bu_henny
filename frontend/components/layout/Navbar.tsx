@@ -9,6 +9,7 @@ type NavbarProps = {
 
 const navItems = [
   { label: "Beranda", href: "#beranda" },
+  { label: "Tentang", href: "#tentang" },
   { label: "Dokumentasi", href: "#dokumentasi" },
   { label: "Pilihan Kamar", href: "#kamar" },
   { label: "Lokasi", href: "#lokasi" },

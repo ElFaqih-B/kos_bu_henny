@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 
 import GallerySection from "./landing/GallerySection";
 import HeroSection from "./landing/HeroSection";
+import AboutSection from "./landing/AboutSection";
 import LocationSection from "./landing/LocationSection";
 import RoomSection from "./landing/RoomSection";
 
@@ -115,6 +116,10 @@ export default async function LandingPage() {
               value: `${activeBranches.length} cabang`,
             },
           ]}
+        />
+
+        <AboutSection
+        name={settings.nama_kos}
         />
 
         {/* Gallery */}
