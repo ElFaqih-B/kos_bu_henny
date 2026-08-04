@@ -70,20 +70,6 @@ export default function LocationSection({
         branch.id === selectedId,
     ) ?? activeBranches[0];
 
-//   useEffect(() => {
-//     if (
-//       selectedId === null &&
-//       activeBranches.length > 0
-//     ) { 
-//         setSelectedId(
-//         activeBranches[0].id,
-//       );
-//     }
-//   }, [
-//     activeBranches,
-//     selectedId,
-//   ]);
-
   useEffect(() => {
     const closeDropdown = (
       event: MouseEvent,
@@ -307,7 +293,7 @@ export default function LocationSection({
                         transition
                         ${
                           active
-                            ? "border-(--ink) bg-(--ink) text-white"
+                            ? "bg-(--ink) text-white!"
                             : "border-(--line) bg-white text-(--ink) hover:border-(--line-strong)"
                         }
                       `}
@@ -328,8 +314,7 @@ export default function LocationSection({
             className="
               relative min-h-80
               overflow-hidden
-              rounded-[10px]
-              border border-(--line)
+              rounded-xl 
               bg-(--parchment)
               sm:min-h-100
               lg:min-h-115
@@ -350,8 +335,7 @@ export default function LocationSection({
           <div
             className="
               flex flex-col
-              rounded-[10px]
-              border border-(--line)
+              rounded-xl
               bg-(--cream)
               p-5
               sm:p-6
