@@ -29,7 +29,7 @@ export default function HeroSection({
   stats = [],
 }: HeroProps) {
   return (
-    <section id="beranda" className="bg-white">
+    <section id="beranda" className="bg-[--background]">
       {/* Hero Background */}
       <div className="relative min-h-155 overflow-hidden sm:min-h-170 lg:min-h-180">
         {/* Background Image */}
