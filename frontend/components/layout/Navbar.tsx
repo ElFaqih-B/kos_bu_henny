@@ -31,7 +31,7 @@ export default function Navbar({ whatsappUrl }: NavbarProps) {
             onClick={closeMenu}
             className="font-(family-name:--font-fraunces) text-[18px] font-medium tracking-[-0.02em] text-white! sm:text-[19px]"
           >
-            Kos Bu Henny
+            Kos Omah Subardiman
           </a>
 
           {/* Menu Desktop */}
