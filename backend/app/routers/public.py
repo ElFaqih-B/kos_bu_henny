@@ -12,6 +12,7 @@ from sqlalchemy.orm import (
     Session,
     joinedload,
     selectinload,
+    with_loader_criteria,
 )
 
 from app.database import get_db
@@ -20,6 +21,7 @@ from app.models import (
     Dokumentasi,
     Fasilitas,
     Kamar,
+    KamarFoto,
     KontenHalaman,
     PengaturanSitus,
 )
@@ -27,6 +29,7 @@ from app.schemas import (
     CabangOut,
     DokumentasiOut,
     FasilitasOut,
+    KamarDetailOut,
     KamarOut,
     KontenOut,
     PengaturanOut,
@@ -88,7 +91,7 @@ def kamar(
 
 @router.get(
     "/kamar/{slug}",
-    response_model=KamarOut,
+    response_model=KamarDetailOut,
 )
 def detail_kamar(
     slug: str,
@@ -103,6 +106,12 @@ def detail_kamar(
         .options(
             joinedload(Kamar.cabang),
             selectinload(Kamar.fasilitas),
+            selectinload(Kamar.foto),
+            with_loader_criteria(
+                KamarFoto,
+                KamarFoto.aktif.is_(True),
+                include_aliases=True,
+            ),
         )
         .where(
             Kamar.slug == slug,

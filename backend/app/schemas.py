@@ -142,9 +142,7 @@ class CabangBase(ApiSchema):
 
 
 class CabangCreate(CabangBase):
-    @field_validator(
-        "nomor_whatsapp",
-    )
+    @field_validator("nomor_whatsapp")
     @classmethod
     def validate_phone(
         cls,
@@ -189,9 +187,7 @@ class CabangUpdate(BaseModel):
 
     aktif: bool | None = None
 
-    @field_validator(
-        "nomor_whatsapp",
-    )
+    @field_validator("nomor_whatsapp")
     @classmethod
     def validate_phone(
         cls,
@@ -202,6 +198,67 @@ class CabangUpdate(BaseModel):
 
 class CabangOut(CabangBase):
     id: int
+
+
+# =========================================================
+# Foto Kamar
+# =========================================================
+
+class KamarFotoBase(ApiSchema):
+    path_foto: str = Field(
+        min_length=1,
+    )
+
+    caption: str | None = Field(
+        default=None,
+        max_length=255,
+    )
+
+    teks_alt: str = Field(
+        min_length=1,
+        max_length=255,
+    )
+
+    urutan: int = Field(
+        default=0,
+        ge=0,
+    )
+
+    aktif: bool = True
+
+
+class KamarFotoCreate(KamarFotoBase):
+    pass
+
+
+class KamarFotoUpdate(BaseModel):
+    path_foto: str | None = Field(
+        default=None,
+        min_length=1,
+    )
+
+    caption: str | None = Field(
+        default=None,
+        max_length=255,
+    )
+
+    teks_alt: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=255,
+    )
+
+    urutan: int | None = Field(
+        default=None,
+        ge=0,
+    )
+
+    aktif: bool | None = None
+
+
+class KamarFotoOut(KamarFotoBase):
+    id: int
+    kamar_id: int
 
 
 # =========================================================
@@ -279,10 +336,7 @@ class KamarBase(ApiSchema):
 
     @model_validator(mode="after")
     def validate_availability(self):
-        if (
-            self.kamar_tersedia
-            > self.jumlah_kamar
-        ):
+        if self.kamar_tersedia > self.jumlah_kamar:
             raise ValueError(
                 "Kamar tersedia tidak boleh "
                 "melebihi jumlah kamar."
@@ -343,7 +397,6 @@ class KamarUpdate(BaseModel):
     )
 
     url_gambar: str | None = None
-
     fasilitas: list[str] | None = None
 
     urutan: int | None = Field(
@@ -386,6 +439,12 @@ class KamarUpdate(BaseModel):
 class KamarOut(KamarBase):
     id: int
     cabang: CabangOut | None = None
+
+
+class KamarDetailOut(KamarOut):
+    foto: list[KamarFotoOut] = Field(
+        default_factory=list,
+    )
 
 
 # =========================================================
@@ -459,7 +518,6 @@ class FasilitasOut(FasilitasBase):
 
 class DokumentasiBase(ApiSchema):
     cabang_id: int | None = None
-
     path_foto: str
 
     caption: str | None = Field(
@@ -527,7 +585,6 @@ class KontenBase(ApiSchema):
     )
 
     isi: str | None = None
-
     aktif: bool = True
 
     urutan: int = Field(
@@ -621,9 +678,7 @@ class PengaturanUpdate(BaseModel):
 
     cta_description: str | None = None
 
-    @field_validator(
-        "nomor_whatsapp",
-    )
+    @field_validator("nomor_whatsapp")
     @classmethod
     def validate_phone(
         cls,

@@ -14,7 +14,11 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+    relationship,
+)
 
 from app.database import Base
 
@@ -166,7 +170,6 @@ class Cabang(TimestampMixin, Base):
         default=True,
     )
 
-    # Relationships
     kamar: Mapped[list["Kamar"]] = relationship(
         "Kamar",
         back_populates="cabang",
@@ -278,7 +281,6 @@ class Kamar(TimestampMixin, Base):
         default=True,
     )
 
-    # Relationships
     cabang: Mapped["Cabang"] = relationship(
         "Cabang",
         back_populates="kamar",
@@ -289,6 +291,70 @@ class Kamar(TimestampMixin, Base):
         secondary=kamar_fasilitas,
         back_populates="kamar",
         order_by="Fasilitas.urutan, Fasilitas.id",
+    )
+
+    foto: Mapped[list["KamarFoto"]] = relationship(
+        "KamarFoto",
+        back_populates="kamar",
+        order_by="KamarFoto.urutan, KamarFoto.id",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+
+# =========================================================
+# Foto Kamar
+# =========================================================
+
+class KamarFoto(TimestampMixin, Base):
+    __tablename__ = "kamar_foto"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    kamar_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "kamar.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    path_foto: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    caption: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    teks_alt: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
+    urutan: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    aktif: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+    )
+
+    kamar: Mapped["Kamar"] = relationship(
+        "Kamar",
+        back_populates="foto",
     )
 
 
@@ -339,7 +405,6 @@ class Fasilitas(TimestampMixin, Base):
         default=True,
     )
 
-    # Relationships
     kamar: Mapped[list["Kamar"]] = relationship(
         "Kamar",
         secondary=kamar_fasilitas,
@@ -397,7 +462,6 @@ class Dokumentasi(TimestampMixin, Base):
         default=True,
     )
 
-    # Relationships
     cabang: Mapped["Cabang | None"] = relationship(
         "Cabang",
         back_populates="dokumentasi",
@@ -463,7 +527,7 @@ class PengaturanSitus(TimestampMixin, Base):
     nama_kos: Mapped[str] = mapped_column(
         String(150),
         nullable=False,
-        default="Kos Bu Henny",
+        default="Kos Omah Subardiman",
     )
 
     nomor_whatsapp: Mapped[str | None] = mapped_column(

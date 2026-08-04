@@ -1,3 +1,10 @@
+export type Admin = {
+  id: number;
+  username: string;
+  aktif: boolean;
+};
+
+
 export type Cabang = {
   id: number;
   nama: string;
@@ -12,11 +19,23 @@ export type Cabang = {
   aktif: boolean;
 };
 
+
+export type KamarFoto = {
+  id: number;
+  kamar_id: number;
+  path_foto: string;
+  caption: string | null;
+  teks_alt: string;
+  urutan: number;
+  aktif: boolean;
+};
+
+
 export type Kamar = {
   id: number;
   cabang_id: number;
   nama: string;
-  slug: string | null;
+  slug: string;
   tipe: string;
   deskripsi: string | null;
   harga_bulanan: number;
@@ -28,17 +47,10 @@ export type Kamar = {
   fasilitas: string[];
   urutan: number;
   aktif: boolean;
-  cabang: Cabang | null;
+  cabang?: Cabang | null;
+  foto?: KamarFoto[];
 };
 
-export type Dokumentasi = {
-  id: number;
-  path_foto: string;
-  caption: string | null;
-  teks_alt: string;
-  urutan: number;
-  aktif: boolean;
-};
 
 export type Fasilitas = {
   id: number;
@@ -50,20 +62,53 @@ export type Fasilitas = {
   aktif: boolean;
 };
 
+
+export type Dokumentasi = {
+  id: number;
+  cabang_id: number | null;
+  path_foto: string;
+  caption: string | null;
+  teks_alt: string;
+  urutan: number;
+  aktif: boolean;
+};
+
+
+export type KontenHalaman = {
+  id: number;
+  kunci: string;
+  judul: string | null;
+  isi: string | null;
+  aktif: boolean;
+  urutan: number;
+};
+
+
 export type Pengaturan = {
   id: number;
   nama_kos: string;
   nomor_whatsapp: string | null;
-  alamat: string | null;
-  google_maps_url: string | null;
   instagram_url: string | null;
-
   hero_image: string | null;
   hero_headline: string;
   hero_subheadline: string;
   hero_cta_primary: string;
   hero_cta_secondary: string;
+  cta_heading: string | null;
+  cta_description: string | null;
+};
 
-  cta_heading: string;
-  cta_description: string;
+
+export type RingkasanAdmin = {
+  jumlah_tipe_kamar: number;
+  jumlah_kamar_tersedia: number;
+  jumlah_dokumentasi: number;
+  jumlah_fasilitas: number;
+  konten_terakhir_diperbarui: string | null;
+};
+
+
+export type UploadResponse = {
+  path: string;
+  url: string;
 };

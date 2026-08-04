@@ -1,26 +1,24 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft,
   BedDouble,
   Check,
-  CircleCheck,
-  CircleX,
   ExternalLink,
   MapPin,
   Maximize2,
   MessageCircle,
 } from "lucide-react";
 
-import { mediaUrl } from "@/lib/media";
-import {
-  buildRoomWhatsappUrl,
-} from "@/lib/whatsapp";
-
+import RoomGallery from "@/components/room/RoomGallery";
+import { rupiah } from "@/lib/format";
 import type {
   Kamar,
   Pengaturan,
 } from "@/lib/types";
+import {
+  buildRoomWhatsappUrl,
+} from "@/lib/whatsapp";
+
 
 type RoomDetailProps = {
   room: Kamar;
@@ -28,434 +26,259 @@ type RoomDetailProps = {
 };
 
 
-function formatPrice(value: number) {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-
 export default function RoomDetail({
   room,
   settings,
 }: RoomDetailProps) {
-  const branch = room.cabang;
+  const whatsappUrl =
+    buildRoomWhatsappUrl(
+      room,
+      settings.nomor_whatsapp,
+    );
 
-const whatsappUrl =
-  buildRoomWhatsappUrl(
-    room,
-    settings.nomor_whatsapp,
-  );
-
-  const imageUrl =
-    room.url_gambar
-      ? mediaUrl(room.url_gambar)
-      : null;
-
-  const available =
+  const isAvailable =
     room.kamar_tersedia > 0;
 
+  const branchName =
+    room.cabang?.nama ??
+    "Kos Omah Subardiman";
+
+  const address = [
+    room.cabang?.alamat,
+    room.cabang?.kota,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
   return (
-    <main className="min-h-screen bg-white text-(--ink)">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-black/8 bg-white">
-        <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-5 md:px-8">
+      <header className="sticky top-0 z-40 border-b border-black/8 bg-white/95 backdrop-blur-md">
+        <div className="container-page flex h-17 items-center justify-between">
           <Link
-            href="/"
-            className="font-semibold tracking-[-0.02em] text-(--ink)"
+            href="/#kamar"
+            className="inline-flex items-center gap-2 text-sm font-medium text-(--ink) transition hover:text-(--accent)"
           >
-            {settings.nama_kos}
+            <ArrowLeft size={17} />
+            <span>Kembali</span>
           </Link>
 
           <Link
-            href="/#kamar"
-            className="
-              flex min-h-10 items-center gap-2
-              rounded-lg
-              bg-white px-3.5
-              text-sm font-medium
-              text-(--ink-soft)
-              transition
-              hover:border-(--line-strong)
-              hover:bg-(--cream)
-              hover:text-(--ink)
-            "
+            href="/"
+            className="font-(family-name:--font-fraunces) text-lg font-semibold tracking-[-0.02em] text-(--ink)"
           >
-            <ArrowLeft size={16} />
-            kembali
+            {settings.nama_kos}
           </Link>
         </div>
       </header>
 
-      {/* Main */}
-      <div className="mx-auto max-w-7xl px-7 py-7 md:px-8 md:py-10">
-        <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-12">
-
-          {/* Left */}
-          <div>
-            {/* Image */}
-            <div className="relative aspect-4/3 overflow-hidden rounded-[10px] bg-(--parchment) md:aspect-5/4">
-              {imageUrl ? (
-                <Image
-                  src={imageUrl}
-                  alt={room.nama}
-                  fill
-                  priority
-                  sizes="
-                    (max-width: 1024px) 100vw,
-                    58vw
-                  "
-                  className="object-cover"
+      <main>
+        {/* Detail */}
+        <section className="py-7 sm:py-10 lg:py-14">
+          <div className="container-page">
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] lg:items-start lg:gap-12">
+              {/* Gallery and description */}
+              <div className="min-w-0">
+                <RoomGallery
+                  roomName={room.nama}
+                  coverUrl={room.url_gambar}
+                  photos={room.foto ?? []}
                 />
-              ) : (
-                <div className="flex h-full items-center justify-center">
-                  <BedDouble
-                    size={48}
-                    strokeWidth={1.25}
-                    className="text-black/20"
-                  />
-                </div>
-              )}
 
-              {/* Availability Badge */}
-              <div
-                className={`
-                  absolute left-4 top-4
-                  inline-flex items-center gap-2
-                  rounded-lg bg-white/95
-                  px-3 py-2
-                  text-xs font-semibold
-                  shadow-[0_4px_14px_rgba(50,45,41,0.10)]
-                  backdrop-blur-sm
-                  ${
-                    available
-                      ? "text-(--ink)"
-                      : "text-(--accent)"
-                  }
-                `}
-              >
-                {available ? (
-                  <CircleCheck size={15} />
-                ) : (
-                  <CircleX size={15} />
-                )}
-
-                {available
-                  ? `${room.kamar_tersedia} kamar tersedia`
-                  : "Sedang penuh"}
-              </div>
-            </div>
-
-            {/* Description */}
-            <section className="mt-8 border-t border-black/8 pt-7">
-              <h2 className="font-serif text-2xl tracking-tight">
-                Tentang kamar
-              </h2>
-
-              <p className="mt-3 max-w-3xl text-[15px] leading-7 text-black/60">
-                {room.deskripsi ||
-                  "Informasi deskripsi kamar belum tersedia."}
-              </p>
-            </section>
-
-            {/* Facilities */}
-            <section className="mt-8 border-t border-black/8 pt-7">
-              <div className="flex items-end justify-between gap-4">
-                <div>
-                  <h2 className="font-serif text-2xl tracking-tight">
-                    Fasilitas
+                {/* Description */}
+                <div className="mt-9 border-t border-(--line) pt-8">
+                  <h2 className="text-2xl tracking-tight text-(--ink)">
+                    Tentang kamar
                   </h2>
 
-                  <p className="mt-1 text-sm text-black/50">
-                    Fasilitas yang tersedia pada kamar ini.
+                  <p className="mt-4 text-sm leading-7 text-(--stone) sm:text-base sm:leading-8">
+                    {room.deskripsi ||
+                      `${room.nama} merupakan salah satu pilihan kamar di ${branchName}. Hubungi pengelola untuk memastikan ketersediaannya.`}
                   </p>
                 </div>
 
-                <span className="shrink-0 text-sm font-medium text-black/45">
-                  {room.fasilitas.length} fasilitas
-                </span>
-              </div>
+                {/* Facilities */}
+                <div className="mt-9 border-t border-(--line) pt-8">
+                  <h2 className="text-2xl tracking-tight text-(--ink)">
+                    Fasilitas kamar
+                  </h2>
 
-              {room.fasilitas.length > 0 ? (
-                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {room.fasilitas.map(
-                    (facility) => (
-                      <div
-                        key={facility}
-                        className="
-                          flex min-h-14
-                          items-center gap-3
-                          rounded-lg
-                          border border-black/7
-                          bg-black/2
-                          px-3.5 py-3
-                          text-sm
-                        "
-                      >
-                        <div
-                          className="
-                            flex size-8 shrink-0
-                            items-center justify-center
-                            rounded-md
-                            bg-white
-                            text-(--accent)
-                            shadow-[0_1px_4px_rgba(50,45,41,0.06)]
-                          "
-                        >
-                          <Check
-                            size={15}
-                            strokeWidth={2.2}
-                          />
-                        </div>
+                  {room.fasilitas.length > 0 ? (
+                    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {room.fasilitas.map(
+                        (facility) => (
+                          <div
+                            key={facility}
+                            className="flex min-h-14 items-center gap-3 rounded-[10px] border border-(--line) bg-white px-4 py-3"
+                          >
+                            <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-(--cream) text-(--accent)">
+                              <Check size={16} />
+                            </div>
 
-                        <span className="leading-5">
-                          {facility}
-                        </span>
-                      </div>
-                    ),
+                            <span className="text-sm font-medium text-(--ink)">
+                              {facility}
+                            </span>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  ) : (
+                    <p className="mt-4 text-sm text-(--stone)">
+                      Informasi fasilitas belum
+                      tersedia.
+                    </p>
                   )}
                 </div>
-              ) : (
-                <div className="mt-5 rounded-lg bg-black/3 px-4 py-4">
-                  <p className="text-sm text-black/50">
-                    Informasi fasilitas belum tersedia.
+              </div>
+
+              {/* Information card */}
+              <aside className="lg:sticky lg:top-24">
+                <div className="rounded-[10px] border border-(--line) bg-white p-5 sm:p-6">
+                  <p className="text-sm font-medium text-(--accent)">
+                    {room.tipe}
                   </p>
-                </div>
-              )}
-            </section>
-          </div>
 
-          {/* Right */}
-          <aside className="lg:sticky lg:top-8 lg:self-start">
-            {/* Information Card */}
-            <div
-              className="
-                rounded-[10px]
-                border border-black/10
-                bg-white
-                p-5
-                shadow-[0_8px_28px_rgba(50,45,41,0.05)]
-                sm:p-6
-                md:p-7
-              "
-            >
-              {/* Branch */}
-              <div className="flex items-center gap-2 text-sm font-medium text-(--accent)">
-                <MapPin size={16} />
+                  <h1 className="mt-2 text-[clamp(2rem,7vw,3rem)] leading-[1.05] tracking-[-0.035em] text-(--ink)">
+                    {room.nama}
+                  </h1>
 
-                <span>
-                  {branch?.nama ??
-                    "Kos Bu Henny"}
-                </span>
-              </div>
-
-              {/* Title */}
-              <div className="mt-4">
-                <p className="text-sm text-black/45">
-                  {room.tipe}
-                </p>
-
-                <h1 className="mt-1 font-serif text-[clamp(2rem,5vw,3.35rem)] leading-[1.03] tracking-[-0.035em]">
-                  {room.nama}
-                </h1>
-              </div>
-
-              {/* Price */}
-              <div className="mt-7 rounded-lg bg-(--cream) px-4 py-4">
-                <p className="text-xs font-medium uppercase tracking-[0.12em] text-black/40">
-                  Harga
-                </p>
-
-                <div className="mt-1 flex flex-wrap items-end gap-1.5">
-                  <span className="font-serif text-3xl tracking-[-0.03em] text-(--accent)">
-                    {formatPrice(
-                      room.harga_bulanan,
-                    )}
-                  </span>
-
-                  <span className="pb-1 text-sm text-black/45">
-                    /{room.periode_harga}
-                  </span>
-                </div>
-              </div>
-
-              {/* Specifications */}
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="rounded-lg border border-black/8 px-4 py-4">
-                  <div className="flex items-center gap-2 text-black/45">
-                    <Maximize2 size={16} />
-
-                    <span className="text-xs font-medium uppercase tracking-widest">
-                      Ukuran
-                    </span>
-                  </div>
-
-                  <p className="mt-2 font-medium">
-                    {room.ukuran ||
-                      "Belum tersedia"}
-                  </p>
-                </div>
-
-                <div className="rounded-lg border border-black/8 px-4 py-4">
-                  <div className="flex items-center gap-2 text-black/45">
-                    <BedDouble size={16} />
-
-                    <span className="text-xs font-medium uppercase tracking-widest">
-                      Total
-                    </span>
-                  </div>
-
-                  <p className="mt-2 font-medium">
-                    {room.jumlah_kamar} kamar
-                  </p>
-                </div>
-              </div>
-
-              {/* Availability */}
-              <div className="mt-3 rounded-lg border border-black/8 px-4 py-4">
-                <div className="flex items-start justify-between gap-5">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-widest text-black/40">
-                      Ketersediaan
+                  <div className="mt-6 rounded-[10px] bg-(--cream) p-4">
+                    <p className="text-xs text-(--stone)">
+                      Harga
                     </p>
 
-                    <p className="mt-2 text-sm font-medium leading-5">
-                      {available
-                        ? `${room.kamar_tersedia} dari ${room.jumlah_kamar} kamar tersedia`
-                        : "Kamar sedang penuh"}
-                    </p>
+                    <div className="mt-1 flex flex-wrap items-end gap-x-1.5">
+                      <strong className="text-2xl text-(--ink)">
+                        {rupiah(
+                          room.harga_bulanan,
+                        )}
+                      </strong>
+
+                      <span className="pb-0.5 text-sm text-(--stone)">
+                        /{room.periode_harga}
+                      </span>
+                    </div>
                   </div>
 
-                  <span
-                    className={`
-                      mt-1.5 size-2.5
-                      shrink-0 rounded-full
-                      ${
-                        available
-                          ? "bg-emerald-600"
-                          : "bg-(--accent)"
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <InfoItem
+                      icon={BedDouble}
+                      label="Ketersediaan"
+                      value={
+                        isAvailable
+                          ? `${room.kamar_tersedia} kamar`
+                          : "Penuh"
                       }
-                    `}
-                  />
-                </div>
-              </div>
-
-              {/* WhatsApp */}
-              {whatsappUrl ? (
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="
-                    mt-5 flex min-h-12 w-full
-                    items-center justify-center
-                    gap-2 rounded-lg
-                    bg-(--accent)
-                    px-5 py-3
-                    text-sm font-semibold
-                    text-white!
-                    transition
-                    hover:bg-(--accent-dark)
-                  "
-                >
-                  <MessageCircle size={18} />
-
-                  {available
-                    ? "Tanya kamar via WhatsApp"
-                    : "Tanya ketersediaan berikutnya"}
-                </a>
-              ) : (
-                <div
-                  className="
-                    mt-5 flex min-h-12
-                    items-center justify-center
-                    rounded-lg
-                    bg-black/5
-                    px-5 text-center
-                    text-sm text-black/45
-                  "
-                >
-                  Nomor WhatsApp belum tersedia
-                </div>
-              )}
-
-              {/* Location */}
-              {branch && (
-                <div className="mt-6 border-t border-black/8 pt-6">
-                  <div className="flex items-center gap-2">
-                    <MapPin
-                      size={16}
-                      className="text-(--accent)"
                     />
 
-                    <p className="text-xs font-medium uppercase tracking-widest text-black/40">
-                      Lokasi cabang
-                    </p>
+                    <InfoItem
+                      icon={Maximize2}
+                      label="Ukuran"
+                      value={
+                        room.ukuran || "-"
+                      }
+                    />
                   </div>
 
-                  <p className="mt-3 font-medium">
-                    {branch.nama}
-                  </p>
+                  <div className="mt-3 rounded-[10px] border border-(--line) p-4">
+                    <div className="flex items-start gap-3">
+                      <MapPin
+                        size={18}
+                        className="mt-0.5 shrink-0 text-(--accent)"
+                      />
 
-                  <p className="mt-1 text-sm leading-6 text-black/55">
-                    {branch.alamat}
-                  </p>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-(--ink)">
+                          {branchName}
+                        </p>
 
-                  {branch.patokan && (
-                    <p className="mt-2 text-sm text-black/45">
-                      Patokan: {branch.patokan}
-                    </p>
-                  )}
+                        {address && (
+                          <p className="mt-1 text-sm leading-6 text-(--stone)">
+                            {address}
+                          </p>
+                        )}
 
-                  {branch.url_maps && (
+                        {room.cabang?.patokan && (
+                          <p className="mt-2 text-xs leading-5 text-(--stone)">
+                            Patokan:{" "}
+                            {room.cabang.patokan}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {whatsappUrl ? (
                     <a
-                      href={branch.url_maps}
+                      href={whatsappUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="
-                        mt-4 inline-flex
-                        items-center gap-2
-                        rounded-md
-                        text-sm font-semibold
-                        text-(--accent)
-                        transition
-                        hover:text-(--accent-dark)
-                      "
+                      className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-(--accent) px-5 text-sm font-semibold text-white! transition hover:brightness-90"
                     >
-                      Buka di Google Maps
-                      <ExternalLink size={15} />
+                      <MessageCircle size={18} />
+                      Tanya ketersediaan
+                    </a>
+                  ) : (
+                    <div className="mt-5 rounded-[10px] bg-(--cream) p-4 text-center text-sm text-(--stone)">
+                      Nomor WhatsApp belum tersedia.
+                    </div>
+                  )}
+
+                  {room.cabang?.url_maps && (
+                    <a
+                      href={room.cabang.url_maps}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-(--line) px-5 text-sm font-semibold text-(--ink) transition hover:border-(--accent) hover:text-(--accent)"
+                    >
+                      <MapPin size={17} />
+                      Buka Google Maps
+                      <ExternalLink size={14} />
                     </a>
                   )}
+
+                  <p className="mt-5 text-center text-xs leading-5 text-(--stone)">
+                    Ketersediaan kamar dapat berubah.
+                    Hubungi pengelola untuk memastikan
+                    informasi terbaru.
+                  </p>
                 </div>
-              )}
+              </aside>
             </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
 
-            {/* Note */}
-            <div
-              className="
-                mt-4 flex gap-3
-                rounded-[10px]
-                bg-(--cream)
-                p-4
-              "
-            >
-              <CircleCheck
-                size={18}
-                className="mt-0.5 shrink-0 text-(--accent)"
-              />
 
-              <p className="text-xs leading-5 text-black/50">
-                Informasi harga dan ketersediaan
-                ditampilkan berdasarkan data terbaru.
-                Konfirmasikan kembali melalui WhatsApp
-                sebelum datang ke lokasi.
-              </p>
-            </div>
-          </aside>
-        </div>
-      </div>
-    </main>
+type InfoItemProps = {
+  icon: typeof BedDouble;
+  label: string;
+  value: string;
+};
+
+
+function InfoItem({
+  icon: Icon,
+  label,
+  value,
+}: InfoItemProps) {
+  return (
+    <div className="rounded-[10px] border border-(--line) p-4">
+      <Icon
+        size={18}
+        className="text-(--accent)"
+      />
+
+      <p className="mt-3 text-xs text-(--stone)">
+        {label}
+      </p>
+
+      <p className="mt-1 text-sm font-semibold text-(--ink)">
+        {value}
+      </p>
+    </div>
   );
 }
