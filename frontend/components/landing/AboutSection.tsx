@@ -13,10 +13,6 @@ export default function AboutSection({
     >
       <div className="container-page">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-sm font-semibold text-(--accent)">
-            Tentang kami
-          </p>
-
           <h2 className="mt-3 text-[clamp(2rem,7vw,3.5rem)] leading-[1.05] tracking-[-0.03em] text-(--ink)">
             Hunian nyaman dengan fasilitas yang lengkap.
           </h2>

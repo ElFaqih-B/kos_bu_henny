@@ -57,6 +57,32 @@ export default function Loading() {
           </div>
         </section>
 
+        {/* About */}
+        <section className="bg-white py-16 sm:py-20 lg:py-24">
+          <div className="container-page">
+            <div className="mx-auto max-w-3xl text-center">
+              {/* Label */}
+              <div className="mx-auto h-4 w-24 animate-pulse rounded bg-black/7" />
+
+              {/* Heading */}
+              <div className="mx-auto mt-4 h-10 w-[88%] animate-pulse rounded-lg bg-black/8 sm:h-12" />
+
+              <div className="mx-auto mt-3 h-10 w-[68%] animate-pulse rounded-lg bg-black/8 sm:h-12" />
+
+              {/* Narrative */}
+              <div className="mx-auto mt-7 max-w-2xl">
+                <div className="h-4 w-full animate-pulse rounded bg-black/6" />
+
+                <div className="mt-3 h-4 w-[94%] animate-pulse rounded bg-black/6" />
+
+                <div className="mx-auto mt-3 h-4 w-[82%] animate-pulse rounded bg-black/6" />
+
+                <div className="mx-auto mt-3 h-4 w-[58%] animate-pulse rounded bg-black/6" />
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Gallery */}
         <section className="bg-white pb-16 pt-24 sm:pb-20 sm:pt-28">
           <div className="container-page">
