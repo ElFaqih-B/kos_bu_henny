@@ -19,7 +19,7 @@ from app.models import Admin
 
 PBKDF2_ITERATIONS = 310_000
 bearer_scheme = HTTPBearer(auto_error=False)
-COOKIE_NAME = "kos_bu_henny_admin"
+COOKIE_NAME = "kos_omah_subardiman_admin"
 
 
 def hash_password(password: str) -> str:
