@@ -53,7 +53,7 @@ export default function HeroSection({
               {headline}
             </h1>
 
-            <p className="mx-auto mt-5 max-w-155 text-sm leading-6 text-white/80 sm:text-[15px] sm:leading-7">
+            <p className="mx-auto mt-5 max-w-155 text-sm leading-6 text-white/90 sm:text-[17px]  sm:leading-7">
               {subheadline}
             </p>
 

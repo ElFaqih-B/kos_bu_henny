@@ -30,13 +30,13 @@ export default function Footer({
               {name}
             </h2>
 
-            <p className="mt-3 max-w-sm text-sm leading-6 text-white/60">
+            <p className="mt-3 max-w-sm text-sm leading-6 text-white/90">
               Temukan pilihan kamar, fasilitas,
               harga, dan lokasi kos dengan informasi
               yang mudah diakses.
             </p>
 
-            <div className="mt-5 flex items-center gap-2 text-sm text-white/50">
+            <div className="mt-5 flex items-center gap-2 text-sm text-white/70">
               <MapPin size={15} />
               <span>
                 Lihat lokasi cabang pada bagian lokasi
@@ -46,7 +46,7 @@ export default function Footer({
 
           {/* Navigation */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/40">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/90">
               Navigasi
             </p>
 
@@ -76,7 +76,7 @@ export default function Footer({
 
           {/* Contact */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/40">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/90">
               Hubungi
             </p>
 
@@ -110,7 +110,7 @@ export default function Footer({
         </div>
 
         {/* Bottom */}
-        <div className="flex flex-col gap-2 border-t border-white/10 py-5 text-xs text-white/40 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 border-t border-white/10 py-5 text-xs text-white/90 sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {year} {name}
           </p>
