@@ -1,54 +1,37 @@
-import type { ReactNode } from "react";
-
-import {
-  getServerAdmin,
-} from "@/lib/admin-auth";
-
 import { redirect } from "next/navigation";
 
-type AdminDashboardLayoutProps = {
-  children: ReactNode;
-};
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminTopbar from "@/components/admin/AdminTopbar";
+import { getServerAdmin } from "@/lib/admin-auth";
 
 export default async function AdminDashboardLayout({
   children,
-}: AdminDashboardLayoutProps) {
-  const admin =
-    await getServerAdmin();
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const admin = await getServerAdmin();
 
   if (!admin) {
     redirect("/admin/login");
   }
 
   return (
-    <div className="min-h-screen bg-(--cream) text-(--ink)">
-      <header className="border-b border-(--line) bg-white">
-        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between px-5 sm:px-6 lg:px-8">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-(--accent)">
-              Kos Omah Subardiman
-            </p>
+    <div className="min-h-screen bg-(--page) text-(--ink)">
+      <AdminSidebar username={admin.username} />
 
-            <p className="mt-0.5 text-sm font-medium">
-              Admin
-            </p>
-          </div>
-
-          <div className="text-right">
-            <p className="text-xs text-(--stone)">
-              Masuk sebagai
-            </p>
-
-            <p className="text-sm font-semibold">
-              {admin.username}
-            </p>
+      <div className="min-h-screen lg:ml-[213px]">
+        <div className="border-b border-(--line) bg-(--page)">
+          <div className="mx-auto w-full max-w-[1180px] px-4 sm:px-6 lg:px-7">
+            <AdminTopbar
+              username={admin.username}
+            />
           </div>
         </div>
-      </header>
 
-      <main className="px-5 py-8 sm:px-6 lg:px-8">
-        {children}
-      </main>
+        <main className="mx-auto w-full max-w-[1180px] px-4 py-5 sm:px-6 sm:py-7 lg:px-7">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

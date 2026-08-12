@@ -46,7 +46,7 @@ export default function Footer({
 
           {/* Navigation */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/90">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/50">
               Navigasi
             </p>
 
@@ -76,17 +76,17 @@ export default function Footer({
 
           {/* Contact */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/90">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/50">
               Hubungi
             </p>
 
-            <div className="mt-4 flex flex-col items-start gap-3">
+            <div className="mt-4 flex flex-col items-start gap-3 bg-(--accent) rounded-lg p-4 text-white/80 hover:bg-(--accent-dark) transition">
               {whatsappUrl && (
                 <a
                   href={whatsappUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="group flex items-center gap-2.5 text-sm text-white/70 transition hover:text-white"
+                  className="group flex items-center gap-2.5 text-sm text-white"
                 >
                   <MessageCircle size={16} />
 

@@ -10,6 +10,7 @@ export async function apiRequest<T>(
   options: ApiRequestOptions = {},
 ): Promise<T> {
   const url = `${API_URL}/${path.replace(/^\/+/, "")}`;
+
   const headers = new Headers(options.headers);
 
   if (options.json !== undefined) {
@@ -32,10 +33,15 @@ export async function apiRequest<T>(
 
     try {
       const data = await response.json();
+
       if (typeof data?.detail === "string") {
         message = data.detail;
+      } else if (typeof data?.message === "string") {
+        message = data.message;
       }
-    } catch {}
+    } catch {
+      // Response bukan JSON.
+    }
 
     throw new Error(message);
   }
@@ -48,13 +54,31 @@ export async function apiRequest<T>(
 }
 
 export const apiGet = <T>(path: string) =>
-  apiRequest<T>(path, { method: "GET" });
+  apiRequest<T>(path, {
+    method: "GET",
+  });
 
-export const apiPost = <T>(path: string, json?: unknown) =>
-  apiRequest<T>(path, { method: "POST", json });
+export const apiPost = <T>(
+  path: string,
+  json?: unknown,
+) =>
+  apiRequest<T>(path, {
+    method: "POST",
+    json,
+  });
 
-export const apiPatch = <T>(path: string, json?: unknown) =>
-  apiRequest<T>(path, { method: "PATCH", json });
+export const apiPatch = <T>(
+  path: string,
+  json?: unknown,
+) =>
+  apiRequest<T>(path, {
+    method: "PATCH",
+    json,
+  });
 
-export const apiDelete = <T = void>(path: string) =>
-  apiRequest<T>(path, { method: "DELETE" });
+export const apiDelete = <T = void>(
+  path: string,
+) =>
+  apiRequest<T>(path, {
+    method: "DELETE",
+  });

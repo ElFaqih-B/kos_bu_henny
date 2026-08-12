@@ -14,8 +14,9 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Kos Bu Henny",
-  description: "Informasi kamar dan lokasi Kos Bu Henny.",
+  title: "Kos Omah Subardiman",
+  description:
+    "Informasi kamar dan lokasi Kos Omah Subardiman.",
 };
 
 export default function RootLayout({
@@ -27,6 +28,7 @@ export default function RootLayout({
     <html
       lang="id"
       className={`${inter.variable} ${fraunces.variable}`}
+      suppressHydrationWarning
     >
       <body>{children}</body>
     </html>

@@ -21,7 +21,11 @@ export default function LogoutButton() {
     <button
       type="button"
       onClick={logout}
-      className="flex min-h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-white/60 transition hover:bg-white/7 hover:text-white"
+      className="
+        flex min-h-10 w-full items-center gap-3 rounded-lg
+        px-3 text-sm font-medium text-white/60 transition
+        hover:bg-white/7 hover:text-white
+      "
     >
       <LogOut size={17} />
       Keluar

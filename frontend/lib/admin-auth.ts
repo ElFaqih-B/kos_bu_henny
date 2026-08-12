@@ -1,8 +1,10 @@
 import { cookies } from "next/headers";
 
-const BACKEND_URL = process.env.BACKEND_INTERNAL_URL;
+const BACKEND_URL =
+  process.env.BACKEND_INTERNAL_URL;
 
-export const ADMIN_COOKIE = "kos_omah_subardiman_admin";
+export const ADMIN_COOKIE =
+  "kos_omah_subardiman_admin";
 
 export type AdminSession = {
   id: number;
@@ -13,7 +15,10 @@ export type AdminSession = {
 export async function getAdminToken(): Promise<string | null> {
   const store = await cookies();
 
-  return store.get(ADMIN_COOKIE)?.value ?? null;
+  return (
+    store.get(ADMIN_COOKIE)?.value ??
+    null
+  );
 }
 
 export async function getServerAdmin(): Promise<AdminSession | null> {

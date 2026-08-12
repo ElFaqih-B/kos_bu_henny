@@ -4,7 +4,6 @@ export type Admin = {
   aktif: boolean;
 };
 
-
 export type Cabang = {
   id: number;
   nama: string;
@@ -19,7 +18,6 @@ export type Cabang = {
   aktif: boolean;
 };
 
-
 export type KamarFoto = {
   id: number;
   kamar_id: number;
@@ -30,12 +28,11 @@ export type KamarFoto = {
   aktif: boolean;
 };
 
-
 export type Kamar = {
   id: number;
   cabang_id: number;
   nama: string;
-  slug: string;
+  slug: string | null;
   tipe: string;
   deskripsi: string | null;
   harga_bulanan: number;
@@ -51,7 +48,6 @@ export type Kamar = {
   foto?: KamarFoto[];
 };
 
-
 export type Fasilitas = {
   id: number;
   nama: string;
@@ -61,7 +57,6 @@ export type Fasilitas = {
   urutan: number;
   aktif: boolean;
 };
-
 
 export type Dokumentasi = {
   id: number;
@@ -73,7 +68,6 @@ export type Dokumentasi = {
   aktif: boolean;
 };
 
-
 export type KontenHalaman = {
   id: number;
   kunci: string;
@@ -82,7 +76,6 @@ export type KontenHalaman = {
   aktif: boolean;
   urutan: number;
 };
-
 
 export type Pengaturan = {
   id: number;
@@ -98,7 +91,6 @@ export type Pengaturan = {
   cta_description: string | null;
 };
 
-
 export type RingkasanAdmin = {
   jumlah_tipe_kamar: number;
   jumlah_kamar_tersedia: number;
@@ -106,7 +98,6 @@ export type RingkasanAdmin = {
   jumlah_fasilitas: number;
   konten_terakhir_diperbarui: string | null;
 };
-
 
 export type UploadResponse = {
   path: string;

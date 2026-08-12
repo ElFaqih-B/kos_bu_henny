@@ -134,7 +134,12 @@ export default function AdminLoginPage() {
                   autoComplete="username"
                   placeholder="Username"
                   disabled={loading}
-                  className="min-h-12 w-full rounded-lg border border-(--line) bg-(--cream)/35 pl-11 pr-4 text-sm outline-none transition focus:border-(--ink) focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                  className="
+                    min-h-12 w-full rounded-lg border border-(--line)
+                    bg-(--cream)/35 pl-11 pr-4 text-sm outline-none
+                    transition focus:border-(--ink) focus:bg-white
+                    disabled:cursor-not-allowed disabled:opacity-60
+                  "
                 />
               </div>
             </label>
@@ -165,7 +170,12 @@ export default function AdminLoginPage() {
                   autoComplete="current-password"
                   placeholder="Password"
                   disabled={loading}
-                  className="min-h-12 w-full rounded-lg border border-(--line) bg-(--cream)/35 pl-11 pr-12 text-sm outline-none transition focus:border-(--ink) focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                  className="
+                    min-h-12 w-full rounded-lg border border-(--line)
+                    bg-(--cream)/35 pl-11 pr-12 text-sm outline-none
+                    transition focus:border-(--ink) focus:bg-white
+                    disabled:cursor-not-allowed disabled:opacity-60
+                  "
                 />
 
                 <button
@@ -201,7 +211,12 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex min-h-12 w-full items-center justify-center rounded-lg bg-(--ink) px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-55"
+              className="
+                flex min-h-12 w-full items-center justify-center
+                rounded-lg bg-(--ink) px-4 text-sm font-semibold
+                text-white transition hover:opacity-90
+                disabled:cursor-not-allowed disabled:opacity-55
+              "
             >
               {loading
                 ? "Memeriksa..."

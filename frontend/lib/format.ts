@@ -1,4 +1,10 @@
-export function rupiah(value: number) {
+export function rupiah(
+  value: number | null | undefined,
+): string {
+  if (value == null) {
+    return "-";
+  }
+
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
@@ -6,8 +12,24 @@ export function rupiah(value: number) {
   }).format(value);
 }
 
-export function whatsappUrl(number?: string | null) {
-  if (!number) return null;
+export function whatsappUrl(
+  number?: string | null,
+): string | null {
+  if (!number) {
+    return null;
+  }
 
-  return `https://wa.me/${number}`;
+  const cleaned = number.replace(/\D/g, "");
+
+  if (!cleaned) {
+    return null;
+  }
+
+  const normalized = cleaned.startsWith("0")
+    ? `62${cleaned.slice(1)}`
+    : cleaned.startsWith("62")
+      ? cleaned
+      : `62${cleaned}`;
+
+  return `https://wa.me/${normalized}`;
 }

@@ -1,7 +1,6 @@
 import { rupiah } from "@/lib/format";
 import type { Kamar } from "@/lib/types";
 
-
 export function normalizeWhatsapp(
   value?: string | null,
 ): string | null {
@@ -19,24 +18,27 @@ export function normalizeWhatsapp(
     return `62${cleaned.slice(1)}`;
   }
 
-  return cleaned;
-}
+  if (cleaned.startsWith("62")) {
+    return cleaned;
+  }
 
+  return `62${cleaned}`;
+}
 
 export function buildRoomWhatsappUrl(
   room: Kamar,
   whatsappNumber?: string | null,
 ): string | null {
-  const phone = normalizeWhatsapp(
-    whatsappNumber,
-  );
+  const phone =
+    normalizeWhatsapp(whatsappNumber);
 
   if (!phone) {
     return null;
   }
 
   const branch =
-    room.cabang?.nama ?? "Kos Bu Henny";
+    room.cabang?.nama ??
+    "Kos Omah Subardiman";
 
   const message = [
     "Halo Bapak/Ibu,",
@@ -47,7 +49,8 @@ export function buildRoomWhatsappUrl(
     "Apakah kamar ini masih tersedia?",
   ].join("\n");
 
-  return `https://wa.me/${phone}?text=${encodeURIComponent(
-    message,
-  )}`;
+  return (
+    `https://wa.me/${phone}?text=` +
+    encodeURIComponent(message)
+  );
 }

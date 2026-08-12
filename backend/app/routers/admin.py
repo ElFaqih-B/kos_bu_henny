@@ -24,6 +24,7 @@ from app.models import (
     Dokumentasi,
     Fasilitas,
     Kamar,
+    KamarFoto,
     KontenHalaman,
     PengaturanSitus,
 )
@@ -38,6 +39,9 @@ from app.schemas import (
     FasilitasOut,
     FasilitasUpdate,
     KamarCreate,
+    KamarFotoCreate,
+    KamarFotoOut,
+    KamarFotoUpdate,
     KamarOut,
     KamarUpdate,
     KontenCreate,
@@ -706,6 +710,146 @@ def hapus_kamar(
         status_code=status.HTTP_204_NO_CONTENT
     )
 
+# =========================================================
+# Foto Kamar
+# =========================================================
+
+@router.get(
+    "/kamar/{kamar_id}/foto",
+    response_model=list[KamarFotoOut],
+)
+def daftar_foto_kamar(
+    kamar_id: int,
+    db: Annotated[
+        Session,
+        Depends(get_db),
+    ],
+):
+    if db.get(Kamar, kamar_id) is None:
+        raise not_found("Kamar")
+
+    query = (
+        select(KamarFoto)
+        .where(
+            KamarFoto.kamar_id == kamar_id,
+        )
+        .order_by(
+            KamarFoto.urutan,
+            KamarFoto.id,
+        )
+    )
+
+    return db.scalars(query).all()
+
+
+@router.post(
+    "/kamar/{kamar_id}/foto",
+    response_model=KamarFotoOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def tambah_foto_kamar(
+    kamar_id: int,
+    payload: KamarFotoCreate,
+    db: Annotated[
+        Session,
+        Depends(get_db),
+    ],
+):
+    if db.get(Kamar, kamar_id) is None:
+        raise not_found("Kamar")
+
+    item = KamarFoto(
+        kamar_id=kamar_id,
+        **payload.model_dump(),
+    )
+
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+
+    return item
+
+
+@router.patch(
+    "/kamar/{kamar_id}/foto/{foto_id}",
+    response_model=KamarFotoOut,
+)
+def ubah_foto_kamar(
+    kamar_id: int,
+    foto_id: int,
+    payload: KamarFotoUpdate,
+    db: Annotated[
+        Session,
+        Depends(get_db),
+    ],
+):
+    item = db.scalar(
+        select(KamarFoto).where(
+            KamarFoto.id == foto_id,
+            KamarFoto.kamar_id == kamar_id,
+        )
+    )
+
+    if item is None:
+        raise not_found("Foto kamar")
+
+    changes = payload.model_dump(
+        exclude_unset=True,
+    )
+
+    old_image = item.path_foto
+
+    for key, value in changes.items():
+        setattr(item, key, value)
+
+    db.commit()
+    db.refresh(item)
+
+    if (
+        "path_foto" in changes
+        and old_image != changes["path_foto"]
+    ):
+        media_service.delete_if_managed(
+            old_image
+        )
+
+    return item
+
+
+@router.delete(
+    "/kamar/{kamar_id}/foto/{foto_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def hapus_foto_kamar(
+    kamar_id: int,
+    foto_id: int,
+    db: Annotated[
+        Session,
+        Depends(get_db),
+    ],
+):
+    item = db.scalar(
+        select(KamarFoto).where(
+            KamarFoto.id == foto_id,
+            KamarFoto.kamar_id == kamar_id,
+        )
+    )
+
+    if item is None:
+        raise not_found("Foto kamar")
+
+    old_image = item.path_foto
+
+    db.delete(item)
+    db.commit()
+
+    media_service.delete_if_managed(
+        old_image
+    )
+
+    return Response(
+        status_code=status.HTTP_204_NO_CONTENT
+    )
 
 # =========================================================
 # Fasilitas

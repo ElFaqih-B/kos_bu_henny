@@ -1,144 +1,159 @@
 import {
-  Building2,
+  BedDouble,
   Camera,
-  House,
-  Layers3,
+  CircleCheck,
+  Sparkles,
 } from "lucide-react";
-import { redirect } from "next/navigation";
 
-import {
-  getAdminToken,
-  getServerAdmin,
-} from "@/lib/admin-auth";
+import AvailabilityPanel from "@/components/admin/AvailabilityPanel";
+import BranchPanel from "@/components/admin/BranchPanel";
+import QuickAccess from "@/components/admin/QuickAccess";
+import RoomTable from "@/components/admin/RoomTable";
+import SummaryCard from "@/components/admin/SummaryCard";
+import { adminServerGet } from "@/lib/admin-server-api";
+import type {
+  Cabang,
+  Kamar,
+  RingkasanAdmin,
+} from "@/lib/types";
 
-const BACKEND_URL = process.env.BACKEND_INTERNAL_URL;
-
-type Summary = {
-  jumlah_tipe_kamar: number;
-  jumlah_kamar_tersedia: number;
-  jumlah_dokumentasi: number;
-  jumlah_fasilitas: number;
-  konten_terakhir_diperbarui: string | null;
+type DashboardBranch = {
+  id: number;
+  name: string;
+  totalRooms: number;
+  availableRooms: number;
 };
 
-async function getSummary(): Promise<Summary> {
-  const admin = await getServerAdmin();
-  const token = await getAdminToken();
+async function getDashboardData() {
+  const [summary, branches, rooms] =
+    await Promise.all([
+      adminServerGet<RingkasanAdmin>(
+        "admin/ringkasan",
+      ),
+      adminServerGet<Cabang[]>("admin/cabang"),
+      adminServerGet<Kamar[]>("admin/kamar"),
+    ]);
 
-  if (!admin || !token) {
-    redirect("/admin/login");
-  }
+  return {
+    summary,
+    branches: buildBranchSummary(
+      branches,
+      rooms,
+    ),
+    rooms: getRecentRooms(rooms),
+  };
+}
 
-  if (!BACKEND_URL) {
-    throw new Error(
-      "BACKEND_INTERNAL_URL belum dikonfigurasi.",
-    );
-  }
+function buildBranchSummary(
+  branches: Cabang[],
+  rooms: Kamar[],
+): DashboardBranch[] {
+  return branches
+    .filter((branch) => branch.aktif)
+    .map((branch) => {
+      const branchRooms = rooms.filter(
+        (room) =>
+          room.cabang_id === branch.id &&
+          room.aktif,
+      );
 
-  const response = await fetch(
-    `${BACKEND_URL.replace(
-      /\/$/,
-      "",
-    )}/api/v1/admin/ringkasan`,
-    {
-      method: "GET",
-      headers: {
-        Cookie: `kos_omah_subardiman_admin=${token}`,
-      },
-      cache: "no-store",
-    },
-  );
+      return {
+        id: branch.id,
+        name: branch.nama,
+        totalRooms: branchRooms.reduce(
+          (sum, room) =>
+            sum + room.jumlah_kamar,
+          0,
+        ),
+        availableRooms: branchRooms.reduce(
+          (sum, room) =>
+            sum + room.kamar_tersedia,
+          0,
+        ),
+      };
+    });
+}
 
-  if (response.status === 401) {
-    redirect("/admin/login");
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      `Gagal mengambil ringkasan: ${response.status}`,
-    );
-  }
-
-  return response.json();
+function getRecentRooms(rooms: Kamar[]) {
+  return [...rooms]
+    .filter((room) => room.aktif)
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 6)
+    .map((room) => ({
+      id: room.id,
+      name: room.nama,
+      branchName:
+        room.cabang?.nama ??
+        "Tidak ada cabang",
+      price: room.harga_bulanan,
+      size: room.ukuran ?? room.tipe,
+      available: room.kamar_tersedia,
+    }));
 }
 
 export default async function AdminDashboardPage() {
-  const summary = await getSummary();
+  const {
+    summary,
+    branches,
+    rooms,
+  } = await getDashboardData();
 
-  const cards = [
-    [
-      "Tipe kamar",
-      summary.jumlah_tipe_kamar,
-      House,
-    ],
-    [
-      "Kamar tersedia",
-      summary.jumlah_kamar_tersedia,
-      Layers3,
-    ],
-    [
-      "Fasilitas",
-      summary.jumlah_fasilitas,
-      Building2,
-    ],
-    [
-      "Dokumentasi",
-      summary.jumlah_dokumentasi,
-      Camera,
-    ],
-  ] as const;
+  const availability = branches.map(
+    (branch) => ({
+      name: branch.name,
+      available: branch.availableRooms,
+      total: branch.totalRooms,
+    }),
+  );
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-(--accent)">
-          Ringkasan
-        </p>
+    <div className="w-full">
+      <section className="grid grid-cols-2 gap-2.5 sm:gap-3.5 xl:grid-cols-4">
+        <SummaryCard
+          label="Tipe kamar"
+          value={summary.jumlah_tipe_kamar}
+          description="Tipe terdaftar"
+          icon={BedDouble}
+          tone="cream"
+        />
 
-        <h2 className="mt-2 font-(family-name:--font-fraunces) text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
-          Dashboard
-        </h2>
+        <SummaryCard
+          label="Kamar tersedia"
+          value={summary.jumlah_kamar_tersedia}
+          description="Siap disewakan"
+          icon={CircleCheck}
+          tone="sage"
+        />
 
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-(--stone)">
-          Pantau data utama Kos Omah Subardiman dan kelola
-          informasi website.
-        </p>
-      </div>
+        <SummaryCard
+          label="Dokumentasi"
+          value={summary.jumlah_dokumentasi}
+          description="Media tersimpan"
+          icon={Camera}
+          tone="blue"
+        />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map(([label, value, Icon]) => (
-          <section
-            key={label}
-            className="rounded-[10px] border border-(--line) bg-white p-5"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs text-(--stone)">
-                  {label}
-                </p>
+        <SummaryCard
+          label="Fasilitas"
+          value={summary.jumlah_fasilitas}
+          description="Terdaftar"
+          icon={Sparkles}
+          tone="rose"
+        />
+      </section>
 
-                <p className="mt-2 text-3xl font-semibold tracking-tight">
-                  {value}
-                </p>
-              </div>
+      <section className="mt-3.5 grid items-start gap-3.5 xl:grid-cols-[minmax(0,1.55fr)_minmax(290px,.72fr)] xl:gap-4.5">
+        <AvailabilityPanel
+          branches={availability}
+        />
 
-              <div className="grid size-10 place-items-center rounded-lg bg-(--cream) text-(--accent)">
-                <Icon size={19} />
-              </div>
-            </div>
-          </section>
-        ))}
-      </div>
+        <BranchPanel
+          branches={branches}
+        />
 
-      <section className="mt-6 rounded-[10px] border border-(--line) bg-white p-5 sm:p-6">
-        <h3 className="font-semibold">
-          Status sistem
-        </h3>
+        <RoomTable rooms={rooms} />
 
-        <p className="mt-1 text-sm text-(--stone)">
-          Autentikasi admin aktif dan dashboard berhasil
-          terhubung ke backend.
-        </p>
+        <QuickAccess />
       </section>
     </div>
   );

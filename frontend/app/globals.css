@@ -21,6 +21,10 @@
   --line-strong: rgba(50, 45, 41, 0.22);
 
   --container: 1180px;
+
+  --page: var(--cream);
+  --muted: var(--stone);
+  --white: var(--surface);
 }
 
 * {
@@ -163,4 +167,15 @@ img {
   .room-slide-left {
     animation: none;
   }
+}
+
+/* Admin theme tokens. Components stay Tailwind-first. */
+
+:root {
+  --admin-sidebar: #171717;
+  --admin-sidebar-soft: #242424;
+  --admin-muted: #8b857e;
+  --admin-success: #47775f;
+  --admin-danger: #a44d55;
+  --admin-warning: #a46f34;
 }

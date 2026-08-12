@@ -1,25 +1,14 @@
 import type { NextConfig } from "next";
 
-const backend =
-  process.env.BACKEND_INTERNAL_URL || "http://localhost:8000";
-
 const nextConfig: NextConfig = {
-  allowedDevOrigins: [
-    "*.trycloudflare.com",
-  ],
-
-  // Proxy FastAPI
-  async rewrites() {
-    return [
+  images: {
+    remotePatterns: [
       {
-        source: "/api/v1/:path*",
-        destination: `${backend}/api/v1/:path*`,
+        protocol: "https",
+        hostname: "kos-bu-henny-api.vercel.app",
+        pathname: "/media/**",
       },
-      {
-        source: "/media/:path*",
-        destination: `${backend}/media/:path*`,
-      },
-    ];
+    ],
   },
 };
 
