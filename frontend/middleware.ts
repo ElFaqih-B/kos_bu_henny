@@ -14,21 +14,16 @@ export function middleware(request: NextRequest) {
 
   const hasToken = request.cookies.has(ADMIN_COOKIE);
 
-  // Belum login → halaman admin tidak boleh diakses.
-  if (isAdminPage && !isLoginPage && !hasToken) {
-    return NextResponse.redirect(
-      new URL("/admin/login", request.url),
-    );
-  }
-
-  // Sudah login → jangan kembali ke halaman login.
-  if (isLoginPage && hasToken) {
-    return NextResponse.redirect(
-      new URL("/admin", request.url),
-    );
-  }
-
+if (isLoginPage) {
   return NextResponse.next();
+}
+
+if (isAdminPage && !hasToken) {
+  return NextResponse.redirect(
+    new URL("/admin/login", request.url)
+  );
+}
+return NextResponse.next();
 }
 
 export const config = {
