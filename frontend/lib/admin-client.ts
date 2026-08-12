@@ -91,3 +91,17 @@ export function adminClientDelete<T = void>(
     method: "DELETE",
   });
 }
+
+export function adminClientUpload<T>(
+  path: string,
+  file: File,
+): Promise<T> {
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  return adminClientRequest<T>(path, {
+    method: "POST",
+    body: formData,
+  });
+}

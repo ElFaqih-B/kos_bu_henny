@@ -1,23 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import {
+  ChangeEvent,
+  useRef,
+  useState,
+} from "react";
+
 import { useRouter } from "next/navigation";
 
 import {
   adminClientDelete,
   adminClientPatch,
   adminClientPost,
+  adminClientUpload,
 } from "@/lib/admin-client";
+
 import type {
   Cabang,
   Kamar,
+  UploadResponse,
 } from "@/lib/types";
+
+import { mediaUrl } from "@/lib/media";
+
 import {
   AdminInput,
   AdminSelect,
   AdminTextarea,
 } from "@/components/admin/AdminField";
+
 import AdminFormActions from "@/components/admin/AdminFormActions";
+import RoomPhotoManager from "@/components/admin/RoomPhotoManager";
 
 type Props = {
   room?: Kamar;
@@ -46,8 +59,17 @@ export default function RoomForm({
   branches,
 }: Props) {
   const router = useRouter();
+
+  const mainImageInputRef =
+    useRef<HTMLInputElement>(null);
+
   const [loading, setLoading] = useState(false);
+  const [uploadingMainImage, setUploadingMainImage] =
+    useState(false);
+
   const [error, setError] = useState("");
+  const [uploadSuccess, setUploadSuccess] =
+    useState("");
 
   const [form, setForm] = useState<FormState>({
     nama: room?.nama ?? "",
@@ -57,7 +79,8 @@ export default function RoomForm({
     harga_bulanan: String(
       room?.harga_bulanan ?? "",
     ),
-    periode_harga: room?.periode_harga ?? "bulan",
+    periode_harga:
+      room?.periode_harga ?? "bulan",
     jumlah_kamar: String(
       room?.jumlah_kamar ?? 1,
     ),
@@ -67,12 +90,16 @@ export default function RoomForm({
     ukuran: room?.ukuran ?? "",
     url_gambar: room?.url_gambar ?? "",
     cabang_id: String(
-      room?.cabang_id ?? branches[0]?.id ?? "",
+      room?.cabang_id ??
+        branches[0]?.id ??
+        "",
     ),
-    fasilitas: (room?.fasilitas ?? []).join(
-      "\n",
+    fasilitas: (
+      room?.fasilitas ?? []
+    ).join("\n"),
+    urutan: String(
+      room?.urutan ?? 0,
     ),
-    urutan: String(room?.urutan ?? 0),
     aktif: room?.aktif ?? true,
   });
 
@@ -86,18 +113,73 @@ export default function RoomForm({
     }));
   }
 
+  async function uploadMainImage(
+    file: File,
+  ) {
+    setUploadingMainImage(true);
+    setError("");
+    setUploadSuccess("");
+
+    try {
+      const uploaded =
+        await adminClientUpload<UploadResponse>(
+          "admin/upload",
+          file,
+        );
+
+      setField(
+        "url_gambar",
+        uploaded.url,
+      );
+
+      setUploadSuccess(
+        "Foto utama berhasil diupload. Simpan kamar untuk menerapkan perubahan.",
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Gagal mengupload foto utama.",
+      );
+    } finally {
+      setUploadingMainImage(false);
+
+      if (mainImageInputRef.current) {
+        mainImageInputRef.current.value = "";
+      }
+    }
+  }
+
+  function handleMainImageChange(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    void uploadMainImage(file);
+  }
+
   async function submit(
     event: React.FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
+
     setLoading(true);
     setError("");
+    setUploadSuccess("");
 
     const payload = {
       ...form,
       cabang_id: Number(form.cabang_id),
-      harga_bulanan: Number(form.harga_bulanan),
-      jumlah_kamar: Number(form.jumlah_kamar),
+      harga_bulanan: Number(
+        form.harga_bulanan,
+      ),
+      jumlah_kamar: Number(
+        form.jumlah_kamar,
+      ),
       kamar_tersedia: Number(
         form.kamar_tersedia,
       ),
@@ -126,6 +208,7 @@ export default function RoomForm({
           ? `/admin/kamar/${room.id}`
           : "/admin/kamar",
       );
+
       router.refresh();
     } catch (cause) {
       setError(
@@ -133,14 +216,21 @@ export default function RoomForm({
           ? cause.message
           : "Gagal menyimpan data kamar.",
       );
+
       setLoading(false);
     }
   }
 
   async function remove() {
-    if (!room) return;
+    if (!room) {
+      return;
+    }
 
-    if (!window.confirm(`Hapus ${room.nama}?`)) {
+    if (
+      !window.confirm(
+        `Hapus ${room.nama}?`,
+      )
+    ) {
       return;
     }
 
@@ -151,6 +241,7 @@ export default function RoomForm({
       await adminClientDelete(
         `admin/kamar/${room.id}`,
       );
+
       router.push("/admin/kamar");
       router.refresh();
     } catch (cause) {
@@ -159,243 +250,370 @@ export default function RoomForm({
           ? cause.message
           : "Gagal menghapus kamar.",
       );
+
       setLoading(false);
     }
   }
 
+  const mainImage = mediaUrl(
+    form.url_gambar,
+  );
+
   return (
     <form
       onSubmit={submit}
-      className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,.75fr)]"
+      className="grid gap-4"
     >
-      <section className="grid gap-4 rounded-xl border border-(--line) bg-white p-4 sm:p-5">
-        <div>
-          <h2 className="font-(family-name:--font-fraunces) text-xl">
-            Informasi kamar
-          </h2>
-          <p className="mt-1 text-[11px] text-(--muted)">
-            Data utama yang digunakan website.
-          </p>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <AdminInput
-            label="Nama kamar"
-            required
-            value={form.nama}
-            onChange={(event) =>
-              setField("nama", event.target.value)
-            }
-            placeholder="Kamar Standar 1"
-          />
-
-          <AdminInput
-            label="Tipe"
-            required
-            value={form.tipe}
-            onChange={(event) =>
-              setField("tipe", event.target.value)
-            }
-            placeholder="Standar"
-          />
-
-          <AdminSelect
-            label="Cabang"
-            required
-            value={form.cabang_id}
-            onChange={(event) =>
-              setField(
-                "cabang_id",
-                event.target.value,
-              )
-            }
-          >
-            <option value="">Pilih cabang</option>
-            {branches.map((branch) => (
-              <option
-                key={branch.id}
-                value={branch.id}
-              >
-                {branch.nama}
-              </option>
-            ))}
-          </AdminSelect>
-
-          <AdminInput
-            label="Ukuran"
-            value={form.ukuran}
-            onChange={(event) =>
-              setField("ukuran", event.target.value)
-            }
-            placeholder="3 × 3 m"
-          />
-
-          <AdminInput
-            label="Harga"
-            required
-            type="number"
-            min="1"
-            value={form.harga_bulanan}
-            onChange={(event) =>
-              setField(
-                "harga_bulanan",
-                event.target.value,
-              )
-            }
-            placeholder="900000"
-          />
-
-          <AdminSelect
-            label="Periode harga"
-            value={form.periode_harga}
-            onChange={(event) =>
-              setField(
-                "periode_harga",
-                event.target.value,
-              )
-            }
-          >
-            <option value="bulan">bulan</option>
-            <option value="minggu">minggu</option>
-            <option value="hari">hari</option>
-          </AdminSelect>
-
-          <AdminInput
-            label="Jumlah kamar"
-            required
-            type="number"
-            min="0"
-            value={form.jumlah_kamar}
-            onChange={(event) =>
-              setField(
-                "jumlah_kamar",
-                event.target.value,
-              )
-            }
-          />
-
-          <AdminInput
-            label="Kamar tersedia"
-            required
-            type="number"
-            min="0"
-            value={form.kamar_tersedia}
-            onChange={(event) =>
-              setField(
-                "kamar_tersedia",
-                event.target.value,
-              )
-            }
-          />
-        </div>
-
-        <AdminTextarea
-          label="Deskripsi"
-          value={form.deskripsi}
-          onChange={(event) =>
-            setField(
-              "deskripsi",
-              event.target.value,
-            )
-          }
-          placeholder="Jelaskan karakteristik kamar..."
-        />
-
-        <AdminTextarea
-          label="Fasilitas"
-          hint="Satu fasilitas per baris. Nama fasilitas harus sudah terdaftar di sistem."
-          value={form.fasilitas}
-          onChange={(event) =>
-            setField(
-              "fasilitas",
-              event.target.value,
-            )
-          }
-        />
-      </section>
-
-      <section className="grid content-start gap-4">
-        <div className="grid gap-4 rounded-xl border border-(--line) bg-white p-4 sm:p-5">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,.75fr)]">
+        <section className="grid gap-4 rounded-xl border border-(--line) bg-white p-4 sm:p-5">
           <div>
             <h2 className="font-(family-name:--font-fraunces) text-xl">
-              Publikasi
+              Informasi kamar
             </h2>
+
             <p className="mt-1 text-[11px] text-(--muted)">
-              Atur URL, urutan, dan status kamar.
+              Data utama yang digunakan
+              website.
             </p>
           </div>
 
-          <AdminInput
-            label="Slug"
-            value={form.slug}
-            onChange={(event) =>
-              setField("slug", event.target.value)
-            }
-            placeholder="kamar-standar-1"
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <AdminInput
+              label="Nama kamar"
+              required
+              value={form.nama}
+              onChange={(event) =>
+                setField(
+                  "nama",
+                  event.target.value,
+                )
+              }
+              placeholder="Kamar Standar 1"
+            />
 
-          <AdminInput
-            label="URL gambar utama"
-            value={form.url_gambar}
+            <AdminInput
+              label="Tipe"
+              required
+              value={form.tipe}
+              onChange={(event) =>
+                setField(
+                  "tipe",
+                  event.target.value,
+                )
+              }
+              placeholder="Standar"
+            />
+
+            <AdminSelect
+              label="Cabang"
+              required
+              value={form.cabang_id}
+              onChange={(event) =>
+                setField(
+                  "cabang_id",
+                  event.target.value,
+                )
+              }
+            >
+              <option value="">
+                Pilih cabang
+              </option>
+
+              {branches.map((branch) => (
+                <option
+                  key={branch.id}
+                  value={branch.id}
+                >
+                  {branch.nama}
+                </option>
+              ))}
+            </AdminSelect>
+
+            <AdminInput
+              label="Ukuran"
+              value={form.ukuran}
+              onChange={(event) =>
+                setField(
+                  "ukuran",
+                  event.target.value,
+                )
+              }
+              placeholder="3 × 3 m"
+            />
+
+            <AdminInput
+              label="Harga"
+              required
+              type="number"
+              min="1"
+              value={form.harga_bulanan}
+              onChange={(event) =>
+                setField(
+                  "harga_bulanan",
+                  event.target.value,
+                )
+              }
+              placeholder="900000"
+            />
+
+            <AdminSelect
+              label="Periode harga"
+              value={form.periode_harga}
+              onChange={(event) =>
+                setField(
+                  "periode_harga",
+                  event.target.value,
+                )
+              }
+            >
+              <option value="bulan">
+                bulan
+              </option>
+
+              <option value="minggu">
+                minggu
+              </option>
+
+              <option value="hari">
+                hari
+              </option>
+            </AdminSelect>
+
+            <AdminInput
+              label="Jumlah kamar"
+              required
+              type="number"
+              min="0"
+              value={form.jumlah_kamar}
+              onChange={(event) =>
+                setField(
+                  "jumlah_kamar",
+                  event.target.value,
+                )
+              }
+            />
+
+            <AdminInput
+              label="Kamar tersedia"
+              required
+              type="number"
+              min="0"
+              value={
+                form.kamar_tersedia
+              }
+              onChange={(event) =>
+                setField(
+                  "kamar_tersedia",
+                  event.target.value,
+                )
+              }
+            />
+          </div>
+
+          <AdminTextarea
+            label="Deskripsi"
+            value={form.deskripsi}
             onChange={(event) =>
               setField(
-                "url_gambar",
+                "deskripsi",
                 event.target.value,
               )
             }
-            placeholder="/media/..."
+            placeholder="Jelaskan karakteristik kamar..."
           />
 
-          <AdminInput
-            label="Urutan"
-            type="number"
-            min="0"
-            value={form.urutan}
+          <AdminTextarea
+            label="Fasilitas"
+            hint="Satu fasilitas per baris. Nama fasilitas harus sudah terdaftar di sistem."
+            value={form.fasilitas}
             onChange={(event) =>
-              setField("urutan", event.target.value)
+              setField(
+                "fasilitas",
+                event.target.value,
+              )
             }
           />
+        </section>
 
-          <label className="flex min-h-11 items-center justify-between rounded-[9px] border border-(--line) px-3.5">
-            <span>
-              <strong className="block text-xs">
-                Tampilkan di website
-              </strong>
-              <span className="text-[10px] text-(--muted)">
-                Kamar aktif dapat ditampilkan publik.
-              </span>
-            </span>
-            <input
-              type="checkbox"
-              checked={form.aktif}
+        <section className="grid content-start gap-4">
+          <div className="grid gap-4 rounded-xl border border-(--line) bg-white p-4 sm:p-5">
+            <div>
+              <h2 className="font-(family-name:--font-fraunces) text-xl">
+                Publikasi
+              </h2>
+
+              <p className="mt-1 text-[11px] text-(--muted)">
+                Atur URL, foto utama,
+                urutan, dan status kamar.
+              </p>
+            </div>
+
+            <AdminInput
+              label="Slug"
+              value={form.slug}
               onChange={(event) =>
                 setField(
-                  "aktif",
-                  event.target.checked,
+                  "slug",
+                  event.target.value,
                 )
               }
-              className="size-4 accent-(--accent)"
+              placeholder="kamar-standar-1"
             />
-          </label>
-        </div>
 
-        {error && (
-          <div className="rounded-[9px] border border-red-200 bg-red-50 px-3.5 py-3 text-xs leading-5 text-red-700">
-            {error}
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold text-(--ink)">
+                    Foto utama
+                  </p>
+
+                  <p className="mt-1 text-[10px] leading-4 text-(--muted)">
+                    Digunakan sebagai gambar
+                    cover kamar pada listing
+                    dan halaman publik.
+                  </p>
+                </div>
+
+                <input
+                  ref={mainImageInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  className="hidden"
+                  onChange={
+                    handleMainImageChange
+                  }
+                />
+
+                <button
+                  type="button"
+                  disabled={
+                    uploadingMainImage ||
+                    loading
+                  }
+                  onClick={() =>
+                    mainImageInputRef.current?.click()
+                  }
+                  className="shrink-0 rounded-[9px] bg-(--ink) px-3.5 py-2.5 text-[11px] font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {uploadingMainImage
+                    ? "Mengupload..."
+                    : form.url_gambar
+                      ? "Ganti foto"
+                      : "Upload foto"}
+                </button>
+              </div>
+
+              <div className="overflow-hidden rounded-[10px] border border-(--line) bg-(--background)">
+                {mainImage ? (
+                  <img
+                    src={mainImage}
+                    alt={`Foto utama ${form.nama || "kamar"}`}
+                    className="aspect-16/10 w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex aspect-16/10 items-center justify-center px-4 text-center">
+                    <div>
+                      <p className="text-xs font-semibold text-(--ink)">
+                        Belum ada foto utama
+                      </p>
+
+                      <p className="mt-1 text-[10px] leading-4 text-(--muted)">
+                        Pilih file gambar untuk
+                        menjadikannya cover kamar.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {uploadSuccess && (
+                <p className="text-[10px] leading-4 text-green-700">
+                  {uploadSuccess}
+                </p>
+              )}
+            </div>
+
+            <AdminInput
+              label="Urutan"
+              type="number"
+              min="0"
+              value={form.urutan}
+              onChange={(event) =>
+                setField(
+                  "urutan",
+                  event.target.value,
+                )
+              }
+            />
+
+            <label className="flex min-h-11 items-center justify-between rounded-[9px] border border-(--line) px-3.5">
+              <span>
+                <strong className="block text-xs">
+                  Tampilkan di website
+                </strong>
+
+                <span className="text-[10px] text-(--muted)">
+                  Kamar aktif dapat
+                  ditampilkan publik.
+                </span>
+              </span>
+
+              <input
+                type="checkbox"
+                checked={form.aktif}
+                onChange={(event) =>
+                  setField(
+                    "aktif",
+                    event.target.checked,
+                  )
+                }
+                className="size-4 accent-(--accent)"
+              />
+            </label>
           </div>
-        )}
 
-        <AdminFormActions
-          cancelHref={
-            room
-              ? `/admin/kamar/${room.id}`
-              : "/admin/kamar"
-          }
-          loading={loading}
-          saveLabel="Simpan kamar"
-          onDelete={room ? remove : undefined}
+          {error && (
+            <div className="rounded-[9px] border border-red-200 bg-red-50 px-3.5 py-3 text-xs leading-5 text-red-700">
+              {error}
+            </div>
+          )}
+
+          <AdminFormActions
+            cancelHref={
+              room
+                ? `/admin/kamar/${room.id}`
+                : "/admin/kamar"
+            }
+            loading={
+              loading ||
+              uploadingMainImage
+            }
+            saveLabel="Simpan kamar"
+            onDelete={
+              room ? remove : undefined
+            }
+          />
+        </section>
+      </div>
+
+      {room ? (
+        <RoomPhotoManager
+          roomId={room.id}
         />
-      </section>
+      ) : (
+        <section className="rounded-xl border border-dashed border-(--line) bg-white p-5">
+          <h2 className="font-(family-name:--font-fraunces) text-xl">
+            Dokumentasi kamar
+          </h2>
+
+          <p className="mt-1 text-xs leading-5 text-(--muted)">
+            Simpan kamar terlebih dahulu.
+            Setelah kamar dibuat, kamu dapat
+            menambahkan banyak foto dokumentasi
+            khusus untuk kamar tersebut.
+          </p>
+        </section>
+      )}
     </form>
   );
 }

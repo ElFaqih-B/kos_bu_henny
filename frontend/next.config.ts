@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         hostname: "kos-bu-henny-api.vercel.app",
         pathname: "/media/**",
       },
+      {
+        protocol: "https",
+        hostname: "ekdaczh6dlnknlqe.public.blob.vercel-storage.com",
+        pathname: "/**",
+      },
     ],
   },
 };
