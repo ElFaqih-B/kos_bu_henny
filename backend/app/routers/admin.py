@@ -18,6 +18,11 @@ from sqlalchemy.orm import (
     selectinload,
 )
 
+from app.services.maps import (
+    MapsResolutionError,
+    resolve_google_maps_coordinates,
+)
+
 from app.database import get_db
 from app.models import (
     Cabang,
@@ -378,16 +383,34 @@ def tambah_cabang(
             "Nama cabang sudah digunakan."
         )
 
-    item = Cabang(
-        **payload.model_dump()
-    )
+    data = payload.model_dump()
+
+    try:
+        coordinates = (
+            resolve_google_maps_coordinates(
+                data.get("url_maps")
+            )
+        )
+    except MapsResolutionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    if coordinates is None:
+        data["latitude"] = None
+        data["longitude"] = None
+    else:
+        data["latitude"] = coordinates[0]
+        data["longitude"] = coordinates[1]
+
+    item = Cabang(**data)
 
     db.add(item)
     db.commit()
     db.refresh(item)
 
     return item
-
 
 @router.patch(
     "/cabang/{item_id}",
@@ -423,6 +446,36 @@ def ubah_cabang(
                 "Nama cabang sudah digunakan."
             )
 
+    # -----------------------------------------------------
+    # Google Maps
+    # -----------------------------------------------------
+
+    if "url_maps" in changes:
+        try:
+            coordinates = (
+                resolve_google_maps_coordinates(
+                    changes["url_maps"]
+                )
+            )
+        except MapsResolutionError as exc:
+            raise HTTPException(
+                status_code=(
+                    status.HTTP_422_UNPROCESSABLE_ENTITY
+                ),
+                detail=str(exc),
+            ) from exc
+
+        if coordinates is None:
+            changes["latitude"] = None
+            changes["longitude"] = None
+        else:
+            changes["latitude"] = coordinates[0]
+            changes["longitude"] = coordinates[1]
+
+    # -----------------------------------------------------
+    # Update
+    # -----------------------------------------------------
+
     old_image = item.url_gambar
 
     for key, value in changes.items():
@@ -440,7 +493,6 @@ def ubah_cabang(
         )
 
     return item
-
 
 @router.delete(
     "/cabang/{item_id}",

@@ -12,7 +12,21 @@ export type Cabang = {
   deskripsi: string | null;
   patokan: string | null;
   nomor_whatsapp: string | null;
+
+  /**
+   * URL Google Maps yang dimasukkan oleh admin.
+   * Field ini tetap menjadi sumber untuk tombol
+   * "Buka Google Maps".
+   */
   url_maps: string | null;
+
+  /**
+   * Koordinat hasil resolusi backend dari url_maps.
+   * Admin tidak mengisi kedua field ini secara manual.
+   */
+  latitude: number | null;
+  longitude: number | null;
+
   url_gambar: string | null;
   urutan: number;
   aktif: boolean;
@@ -44,6 +58,7 @@ export type Kamar = {
   fasilitas: string[];
   urutan: number;
   aktif: boolean;
+
   cabang?: Cabang | null;
   foto?: KamarFoto[];
 };
@@ -82,11 +97,15 @@ export type Pengaturan = {
   nama_kos: string;
   nomor_whatsapp: string | null;
   instagram_url: string | null;
+
   hero_image: string | null;
+
   hero_headline: string;
   hero_subheadline: string;
+
   hero_cta_primary: string;
   hero_cta_secondary: string;
+
   cta_heading: string | null;
   cta_description: string | null;
 };

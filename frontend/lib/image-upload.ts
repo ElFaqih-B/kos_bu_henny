@@ -1,8 +1,5 @@
-
-import heic2any from "heic2any";
-
 export const IMAGE_UPLOAD_ACCEPT =
-  "image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif";
+  "image/jpeg,image/png,image/webp,image/avif,image/gif,image/heic,image/heif";
 
 export function isHeicFile(file: File): boolean {
   return (
@@ -12,6 +9,16 @@ export function isHeicFile(file: File): boolean {
   );
 }
 
+export function isSupportedImageFile(
+  file: File,
+): boolean {
+  if (isHeicFile(file)) {
+    return true;
+  }
+
+  return file.type.startsWith("image/");
+}
+
 export async function prepareUploadFile(
   file: File,
 ): Promise<File> {
@@ -19,27 +26,55 @@ export async function prepareUploadFile(
     return file;
   }
 
-  const converted = await heic2any({
-    blob: file,
-    toType: "image/jpeg",
-    quality: 0.9,
-  });
+  if (typeof window === "undefined") {
+    throw new Error(
+      "Konversi HEIC hanya dapat dilakukan di browser.",
+    );
+  }
 
-  const jpegBlob = Array.isArray(converted)
-    ? converted[0]
-    : converted;
+  try {
+    const { default: heic2any } = await import(
+      "heic2any"
+    );
 
-  if (!jpegBlob) {
+    const converted = await heic2any({
+      blob: file,
+      toType: "image/jpeg",
+      quality: 0.9,
+    });
+
+    const jpegBlob = Array.isArray(converted)
+      ? converted[0]
+      : converted;
+
+    if (!(jpegBlob instanceof Blob)) {
+      throw new Error(
+        "Hasil konversi HEIC tidak valid.",
+      );
+    }
+
+    const filename = file.name.replace(
+      /\.(heic|heif)$/i,
+      ".jpg",
+    );
+
+    return new File(
+      [jpegBlob],
+      filename,
+      {
+        type: "image/jpeg",
+        lastModified: Date.now(),
+      },
+    );
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(
+        `Gagal mengonversi HEIC: ${error.message}`,
+      );
+    }
+
     throw new Error(
       "Gagal mengonversi gambar HEIC.",
     );
   }
-
-  return new File(
-    [jpegBlob],
-    file.name.replace(/\.(heic|heif)$/i, ".jpg"),
-    {
-      type: "image/jpeg",
-    },
-  );
 }

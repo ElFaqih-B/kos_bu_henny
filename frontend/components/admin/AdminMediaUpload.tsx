@@ -1,7 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { ChangeEvent, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  useRef,
+  useState,
+} from "react";
 
 import { adminClientUpload } from "@/lib/admin-client";
 import {
@@ -30,6 +34,7 @@ export default function AdminMediaUpload({
   disabled = false,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -37,9 +42,11 @@ export default function AdminMediaUpload({
   const preview = mediaUrl(value);
 
   function openPicker() {
-    if (!disabled && !uploading) {
-      inputRef.current?.click();
+    if (disabled || uploading) {
+      return;
     }
+
+    inputRef.current?.click();
   }
 
   async function handleChange(
@@ -57,7 +64,10 @@ export default function AdminMediaUpload({
 
     try {
       const wasHeic = isHeicFile(file);
-      const uploadFile = await prepareUploadFile(file);
+
+      const uploadFile =
+        await prepareUploadFile(file);
+
       const uploaded =
         await adminClientUpload<UploadResponse>(
           "admin/upload",
@@ -65,6 +75,7 @@ export default function AdminMediaUpload({
         );
 
       onChange(uploaded.url);
+
       setSuccess(
         wasHeic
           ? "Foto HEIC berhasil dikonversi dan diupload."
@@ -78,6 +89,9 @@ export default function AdminMediaUpload({
       );
     } finally {
       setUploading(false);
+
+      // Memungkinkan user memilih file yang sama
+      // lagi setelah upload gagal/berhasil.
       event.target.value = "";
     }
   }
@@ -85,7 +99,7 @@ export default function AdminMediaUpload({
   return (
     <div className="grid gap-2">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-semibold text-(--ink)">
             {label}
           </p>
@@ -108,8 +122,8 @@ export default function AdminMediaUpload({
 
         <button
           type="button"
-          disabled={disabled || uploading}
           onClick={openPicker}
+          disabled={disabled || uploading}
           className="shrink-0 rounded-[9px] bg-(--ink) px-3.5 py-2.5 text-[11px] font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {uploading

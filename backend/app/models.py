@@ -6,6 +6,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -148,15 +149,45 @@ class Cabang(TimestampMixin, Base):
         nullable=True,
     )
 
+    # -----------------------------------------------------
+    # Google Maps
+    # -----------------------------------------------------
+
+    # URL Google Maps yang dimasukkan oleh admin.
+    # Contoh:
+    # https://maps.app.goo.gl/xxxxxxxx
     url_maps: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
+    # Koordinat hasil resolusi backend dari url_maps.
+    #
+    # Admin TIDAK mengisi field ini secara manual.
+    # Backend yang akan mengisinya ketika url_maps
+    # dibuat atau diperbarui.
+    latitude: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    longitude: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    # -----------------------------------------------------
+    # Media
+    # -----------------------------------------------------
+
     url_gambar: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
+
+    # -----------------------------------------------------
+    # Display
+    # -----------------------------------------------------
 
     urutan: Mapped[int] = mapped_column(
         Integer,
@@ -169,6 +200,10 @@ class Cabang(TimestampMixin, Base):
         nullable=False,
         default=True,
     )
+
+    # -----------------------------------------------------
+    # Relationships
+    # -----------------------------------------------------
 
     kamar: Mapped[list["Kamar"]] = relationship(
         "Kamar",
@@ -372,20 +407,20 @@ class Fasilitas(TimestampMixin, Base):
     )
 
     nama: Mapped[str] = mapped_column(
-        String(120),
+        String(150),
         unique=True,
         nullable=False,
     )
 
     ikon: Mapped[str | None] = mapped_column(
-        String(80),
+        String(100),
         nullable=True,
     )
 
     kategori: Mapped[str] = mapped_column(
-        String(50),
+        String(100),
         nullable=False,
-        default="kamar",
+        default="umum",
     )
 
     deskripsi: Mapped[str | None] = mapped_column(
@@ -469,7 +504,7 @@ class Dokumentasi(TimestampMixin, Base):
 
 
 # =========================================================
-# Konten Landing Page
+# Konten Halaman
 # =========================================================
 
 class KontenHalaman(TimestampMixin, Base):
@@ -482,7 +517,7 @@ class KontenHalaman(TimestampMixin, Base):
     )
 
     kunci: Mapped[str] = mapped_column(
-        String(100),
+        String(150),
         unique=True,
         nullable=False,
         index=True,
@@ -512,11 +547,11 @@ class KontenHalaman(TimestampMixin, Base):
 
 
 # =========================================================
-# Pengaturan Situs
+# Pengaturan
 # =========================================================
 
-class PengaturanSitus(TimestampMixin, Base):
-    __tablename__ = "pengaturan_situs"
+class Pengaturan(TimestampMixin, Base):
+    __tablename__ = "pengaturan"
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -525,9 +560,8 @@ class PengaturanSitus(TimestampMixin, Base):
     )
 
     nama_kos: Mapped[str] = mapped_column(
-        String(150),
+        String(255),
         nullable=False,
-        default="Kos Omah Subardiman",
     )
 
     nomor_whatsapp: Mapped[str | None] = mapped_column(
@@ -546,7 +580,7 @@ class PengaturanSitus(TimestampMixin, Base):
     )
 
     hero_headline: Mapped[str] = mapped_column(
-        String(255),
+        Text,
         nullable=False,
     )
 
@@ -556,12 +590,12 @@ class PengaturanSitus(TimestampMixin, Base):
     )
 
     hero_cta_primary: Mapped[str] = mapped_column(
-        String(80),
+        String(100),
         nullable=False,
     )
 
     hero_cta_secondary: Mapped[str] = mapped_column(
-        String(80),
+        String(100),
         nullable=False,
     )
 

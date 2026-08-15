@@ -199,6 +199,9 @@ class CabangUpdate(BaseModel):
 class CabangOut(CabangBase):
     id: int
 
+    latitude: float | None = None
+    longitude: float | None = None
+
 
 # =========================================================
 # Foto Kamar
