@@ -96,7 +96,7 @@ export type Pengaturan = {
   id: number;
   nama_kos: string;
   nomor_whatsapp: string | null;
-  instagram_url: string | null;
+  tiktok_url: string | null;
 
   hero_image: string | null;
 

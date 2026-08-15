@@ -627,7 +627,7 @@ class PengaturanOut(ApiSchema):
     id: int
     nama_kos: str
     nomor_whatsapp: str | None
-    instagram_url: str | None
+    tiktok_url: str | None
 
     hero_image: str | None
     hero_headline: str
@@ -651,7 +651,7 @@ class PengaturanUpdate(BaseModel):
         max_length=30,
     )
 
-    instagram_url: str | None = None
+    tiktok_url: str | None = None
     hero_image: str | None = None
 
     hero_headline: str | None = Field(

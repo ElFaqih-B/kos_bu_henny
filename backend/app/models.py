@@ -569,7 +569,7 @@ class PengaturanSitus(TimestampMixin, Base):
         nullable=True,
     )
 
-    instagram_url: Mapped[str | None] = mapped_column(
+    tiktok_url: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )

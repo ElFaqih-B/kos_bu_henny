@@ -19,13 +19,13 @@ type Props = {
 type FormState = Omit<
   Pengaturan,
   | "nomor_whatsapp"
-  | "instagram_url"
+  | "tiktok_url"
   | "hero_image"
   | "cta_heading"
   | "cta_description"
 > & {
   nomor_whatsapp: string;
-  instagram_url: string;
+  tiktok_url: string;
   hero_image: string;
   cta_heading: string;
   cta_description: string;
@@ -42,8 +42,8 @@ export default function SettingsForm({
     ...settings,
     nomor_whatsapp:
       settings.nomor_whatsapp ?? "",
-    instagram_url:
-      settings.instagram_url ?? "",
+    tiktok_url:
+      settings.tiktok_url ?? "",
     hero_image: settings.hero_image ?? "",
     cta_heading: settings.cta_heading ?? "",
     cta_description:
@@ -122,10 +122,10 @@ export default function SettingsForm({
 
           <AdminInput
             label="Instagram URL"
-            value={form.instagram_url}
+            value={form.tiktok_url}
             onChange={(event) =>
               setField(
-                "instagram_url",
+                "tiktok_url",
                 event.target.value,
               )
             }

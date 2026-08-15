@@ -142,7 +142,7 @@ export default async function LandingPage() {
         name={settings.nama_kos}
         whatsappUrl={whatsapp}
         instagramUrl={
-          settings.instagram_url
+          settings.tiktok_url
         }
       />
     </>

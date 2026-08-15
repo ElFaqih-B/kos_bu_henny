@@ -1,53 +1,72 @@
 services:
-  database:
-    image: mysql:8.4
-    restart: unless-stopped
-
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: kos_db
-      MYSQL_USER: kos_user
-      MYSQL_PASSWORD: kos_password
-
-    volumes:
-      - mysql_data:/var/lib/mysql
-
-    ports:
-      - "3306:3306"
-
-
   backend:
     build:
       context: ./backend
-
+      dockerfile: Dockerfile
+    container_name: kos-omah-backend
     restart: unless-stopped
 
     environment:
-      DATABASE_URL: mysql+pymysql://kos_user:kos_password@database:3306/kos_db
+      APP_NAME: "Kos Omah Subardiman API"
+      APP_ENV: production
+      API_PREFIX: /api/v1
+
+      SECRET_KEY: "GANTI_DENGAN_SECRET_KEY_RANDOM_PANJANG"
+
+      ACCESS_TOKEN_EXPIRE_MINUTES: 720
+
+      CORS_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000"
+
+      SEED_ADMIN_USERNAME: "admin"
+      SEED_ADMIN_PASSWORD: "11223344"
+
+      UPLOAD_DIR: "/app/uploads"
+      MAX_UPLOAD_MB: 6
+      MEDIA_BASE_URL: "http://localhost:8000"
+
+      DATABASE_URL: "mysql+pymysql://2tVx3uQPPmSW7RJ.root:QpxKMklQKSnnAN6T@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/kos_db?ssl_ca=<CA_PATH>&ssl_verify_cert=true&ssl_verify_identity=true"
 
     ports:
       - "8000:8000"
 
-    depends_on:
-      - database
+    volumes:
+      - backend_uploads:/app/uploads
+      - ./backend/ca.pem:/etc/ssl/tidb/ca.pem:ro
 
+    networks:
+      - kos-network
 
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: "http://localhost:8000/api/v1"
+        NEXT_PUBLIC_MEDIA_BASE_URL: "http://localhost:8000"
 
+    container_name: kos-omah-frontend
     restart: unless-stopped
-
-    environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
-      NEXT_PUBLIC_MEDIA_BASE_URL: http://localhost:8000
-
-    ports:
-      - "3000:3000"
 
     depends_on:
       - backend
 
+    environment:
+      NODE_ENV: production
+
+      BACKEND_INTERNAL_URL: "http://backend:8000"
+
+      NEXT_PUBLIC_API_BASE_URL: "http://localhost:8000/api/v1"
+      NEXT_PUBLIC_MEDIA_BASE_URL: "http://localhost:8000"
+
+    ports:
+      - "3000:3000"
+
+    networks:
+      - kos-network
 
 volumes:
-  mysql_data:
+  backend_uploads:
+
+networks:
+  kos-network:
+    driver: bridge
