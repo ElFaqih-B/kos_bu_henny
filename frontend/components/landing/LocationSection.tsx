@@ -323,7 +323,7 @@ export default function LocationSection({
                     }
                     className={`shrink-0 border px-4 py-2.5 text-xs font-semibold transition ${
                       selected
-                        ? "border-(--ink) bg-(--ink) text-white"
+                        ? "border-(--ink) bg-(--ink) text-white!"
                         : "border-(--line) bg-white text-(--stone) hover:border-(--ink) hover:text-(--ink)"
                     }`}
                   >
@@ -338,7 +338,7 @@ export default function LocationSection({
         <div className="mt-8 grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-stretch lg:gap-8">
           <div className="border border-(--line) bg-(--background) p-5 sm:p-6">
             <div className="flex items-start gap-3">
-              <div className="grid size-10 shrink-0 place-items-center bg-(--ink) text-white">
+              <div className="grid size-10 shrink-0 place-items-center bg-(--ink) text-white!">
                 <MapPin size={19} />
               </div>
 
@@ -373,14 +373,14 @@ export default function LocationSection({
               href={googleMapsLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-6 inline-flex min-h-11 items-center gap-2 border border-(--ink) px-4 py-2.5 text-xs font-semibold text-(--ink) transition hover:bg-(--ink) hover:text-white"
+              className="mt-6 inline-flex min-h-11 items-center gap-2 border border-(--ink) px-4 py-2.5 text-xs font-semibold text-(--ink) transition hover:bg-(--ink) hover:text-white!"
             >
               Buka di Google Maps
               <ExternalLink size={15} />
             </a>
           </div>
 
-          <div className="relative min-h-[360px] overflow-hidden border border-(--line) bg-(--cream) sm:min-h-[430px] lg:min-h-full">
+          <div className="relative min-h-90 overflow-hidden border border-(--line) bg-(--cream) sm:min-h-107.5 lg:min-h-full">
             <iframe
               key={`${selectedBranch.id}-${selectedBranch.latitude}-${selectedBranch.longitude}`}
               src={mapEmbedUrl}
