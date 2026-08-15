@@ -1,8 +1,6 @@
-import { getAdminToken } from "@/lib/admin-auth";
 
-const BACKEND_URL =
-  process.env.BACKEND_INTERNAL_URL ||
-  "http://localhost:8000";
+import { getAdminToken } from "@/lib/admin-auth";
+import { getBackendBaseUrl } from "@/lib/backend-url";
 
 const ADMIN_COOKIE =
   "kos_omah_subardiman_admin";
@@ -12,10 +10,8 @@ type AdminRequestOptions = RequestInit & {
 };
 
 function buildUrl(path: string): string {
-  const base = BACKEND_URL.replace(/\/+$/, "");
   const cleanPath = path.replace(/^\/+/, "");
-
-  return `${base}/api/v1/${cleanPath}`;
+  return `${getBackendBaseUrl()}/api/v1/${cleanPath}`;
 }
 
 async function parseError(
@@ -81,18 +77,15 @@ export async function adminServerRequest<T>(
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(
-    buildUrl(path),
-    {
-      ...options,
-      headers,
-      body:
-        options.json !== undefined
-          ? JSON.stringify(options.json)
-          : options.body,
-      cache: "no-store",
-    },
-  );
+  const response = await fetch(buildUrl(path), {
+    ...options,
+    headers,
+    body:
+      options.json !== undefined
+        ? JSON.stringify(options.json)
+        : options.body,
+    cache: "no-store",
+  });
 
   if (!response.ok) {
     const message = await parseError(response);
@@ -124,37 +117,9 @@ export function adminServerGet<T>(
   });
 }
 
-export function adminServerPost<T>(
-  path: string,
-  json?: unknown,
-): Promise<T> {
-  return adminServerRequest<T>(path, {
-    method: "POST",
-    json,
-  });
-}
-
-export function adminServerPatch<T>(
-  path: string,
-  json?: unknown,
-): Promise<T> {
-  return adminServerRequest<T>(path, {
-    method: "PATCH",
-    json,
-  });
-}
-
-export function adminServerDelete<T = void>(
-  path: string,
-): Promise<T> {
-  return adminServerRequest<T>(path, {
-    method: "DELETE",
-  });
-}
-
 /**
- * The backend currently exposes collection GET endpoints for admin data,
- * but not GET /resource/{id}. Resolve one record from its collection.
+ * Backend exposes collection GET endpoints for admin data.
+ * Resolve a record from its collection when a detail GET endpoint is absent.
  */
 export async function adminServerGetById<
   T extends { id: number },

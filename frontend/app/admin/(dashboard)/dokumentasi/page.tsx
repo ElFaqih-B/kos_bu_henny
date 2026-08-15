@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Images, Plus } from "lucide-react";
 
@@ -48,12 +49,15 @@ export default async function DokumentasiPage() {
               href={`/admin/dokumentasi/${item.id}`}
               className="group overflow-hidden rounded-xl border border-(--line) bg-white transition hover:border-(--line-strong)"
             >
-              <div className="aspect-[4/3] bg-(--cream)">
+              <div className="relative aspect-[4/3] bg-(--cream)">
                 {mediaUrl(item.path_foto) ? (
-                  <img
-                    src={mediaUrl(item.path_foto) ?? undefined}
+                  <Image
+                    src={mediaUrl(item.path_foto) ?? ""}
                     alt={item.teks_alt}
-                    className="size-full object-cover transition duration-200 group-hover:scale-[1.02]"
+                    fill
+                    unoptimized
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    className="object-cover transition duration-200 group-hover:scale-[1.02]"
                   />
                 ) : (
                   <div className="grid size-full place-items-center text-(--stone)">

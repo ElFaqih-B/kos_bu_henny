@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   ChangeEvent,
   useEffect,
@@ -21,6 +22,11 @@ import type {
 } from "@/lib/types";
 
 import { mediaUrl } from "@/lib/media";
+import {
+  IMAGE_UPLOAD_ACCEPT,
+  isHeicFile,
+  prepareUploadFile,
+} from "@/lib/image-upload";
 
 type Props = {
   roomId: number;
@@ -103,7 +109,58 @@ export default function RoomPhotoManager({
   }
 
   useEffect(() => {
-    void loadPhotos();
+    let cancelled = false;
+
+    Promise.resolve().then(() => {
+      if (cancelled) {
+        return;
+      }
+
+      setLoading(true);
+      setError("");
+
+      return adminClientGet<KamarFoto[]>(
+        `admin/kamar/${roomId}/foto`,
+      );
+    })
+      .then((data) => {
+        if (!data || cancelled) {
+          return;
+        }
+
+        setPhotos(data);
+
+        const nextDrafts: Record<number, PhotoDraft> = {};
+
+        for (const photo of data) {
+          nextDrafts[photo.id] = {
+            caption: photo.caption ?? "",
+            teks_alt: photo.teks_alt,
+            urutan: String(photo.urutan),
+            aktif: photo.aktif,
+          };
+        }
+
+        setDrafts(nextDrafts);
+      })
+      .catch((cause) => {
+        if (!cancelled) {
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : "Gagal memuat dokumentasi kamar.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [roomId]);
 
   function updateDraft(
@@ -144,10 +201,11 @@ export default function RoomPhotoManager({
         ) + 1;
 
       for (const file of files) {
+        const uploadFile = await prepareUploadFile(file);
         const uploaded =
           await adminClientUpload<UploadResponse>(
             "admin/upload",
-            file,
+            uploadFile,
           );
 
         await adminClientPost<KamarFoto>(
@@ -164,10 +222,14 @@ export default function RoomPhotoManager({
         nextOrder += 1;
       }
 
+      const convertedCount = files.filter(isHeicFile).length;
+
       setSuccess(
-        files.length === 1
-          ? "Foto berhasil ditambahkan."
-          : `${files.length} foto berhasil ditambahkan.`,
+        convertedCount > 0
+          ? `${files.length} foto berhasil ditambahkan. ${convertedCount} file HEIC/HEIF dikonversi ke JPG.`
+          : files.length === 1
+            ? "Foto berhasil ditambahkan."
+            : `${files.length} foto berhasil ditambahkan.`,
       );
 
       await loadPhotos();
@@ -237,10 +299,11 @@ export default function RoomPhotoManager({
     setSuccess("");
 
     try {
+      const uploadFile = await prepareUploadFile(file);
       const uploaded =
         await adminClientUpload<UploadResponse>(
           "admin/upload",
-          file,
+          uploadFile,
         );
 
       const draft = drafts[photoId];
@@ -320,7 +383,7 @@ export default function RoomPhotoManager({
           <input
             ref={inputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/avif"
+            accept={IMAGE_UPLOAD_ACCEPT}
             multiple
             onChange={handleUpload}
             className="hidden"
@@ -388,13 +451,16 @@ export default function RoomPhotoManager({
                 <div className="grid lg:grid-cols-[220px_minmax(0,1fr)]">
                   <div className="relative aspect-4/3 bg-(--background) lg:aspect-auto">
                     {image ? (
-                      <img
+                      <Image
                         src={image}
                         alt={
                           photo.teks_alt ||
                           "Foto kamar"
                         }
-                        className="h-full w-full object-cover"
+                        fill
+                        unoptimized
+                        sizes="(max-width: 1024px) 100vw, 220px"
+                        className="object-cover"
                       />
                     ) : (
                       <div className="flex h-full min-h-52 items-center justify-center px-4 text-center text-xs text-(--muted)">
@@ -532,7 +598,7 @@ export default function RoomPhotoManager({
                         Ganti foto
                         <input
                           type="file"
-                          accept="image/jpeg,image/png,image/webp,image/avif"
+                          accept={IMAGE_UPLOAD_ACCEPT}
                           className="hidden"
                           disabled={
                             isSaving ||

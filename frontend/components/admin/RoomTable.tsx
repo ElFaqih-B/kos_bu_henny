@@ -1,3 +1,4 @@
+import { rupiah } from "@/lib/format";
 import {
   BedDouble,
   MoreHorizontal,
@@ -17,21 +18,13 @@ type Props = {
   rooms: Room[];
 };
 
-const rupiah = new Intl.NumberFormat(
-  "id-ID",
-  {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  },
-);
 
 export default function RoomTable({
   rooms,
 }: Props) {
   return (
     <article className="min-w-0 overflow-hidden rounded-xl border border-(--line) bg-white">
-      <div className="flex min-h-[70px] items-center gap-3 border-b border-[#eeeae5] px-4 py-4 sm:px-4.5">
+      <div className="flex min-h-17.5 items-center gap-3 border-b border-[#eeeae5] px-4 py-4 sm:px-4.5">
         <div>
           <h2 className="font-(family-name:--font-fraunces) text-lg tracking-tight">
             Kamar Terbaru
@@ -97,7 +90,7 @@ function MobileRoomRow({
   return (
     <Link
       href={`/admin/kamar/${room.id}`}
-      className="flex min-h-[76px] items-center gap-3 px-4 py-3 transition hover:bg-(--cream)/40"
+      className="flex min-h-19 items-center gap-3 px-4 py-3 transition hover:bg-(--cream)/40"
     >
       <RoomIcon />
 
@@ -106,7 +99,7 @@ function MobileRoomRow({
           {room.name}
         </strong>
         <span className="mt-1 block truncate text-[10px] text-(--muted)">
-          {room.branchName} · {rupiah.format(room.price)}
+          {room.branchName} · {rupiah(room.price)}
         </span>
       </span>
 
@@ -146,7 +139,7 @@ function DesktopRoomRow({
       </td>
 
       <td className="whitespace-nowrap px-4 py-3">
-        {rupiah.format(room.price)}
+        {rupiah(room.price)}
       </td>
 
       <td className="px-4 py-3">

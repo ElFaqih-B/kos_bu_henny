@@ -149,7 +149,7 @@ export default function LocationSection({
           <p className="mt-3 max-w-lg text-sm leading-6 text-(--stone) sm:text-base">
             Pilih cabang untuk melihat
             alamat, patokan, dan lokasi
-            Kos Bu Henny.
+            Kos Omah Subardiman.
           </p>
         </div>
 

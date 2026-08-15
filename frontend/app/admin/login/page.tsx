@@ -12,11 +12,7 @@ import {
   UserRound,
 } from "lucide-react";
 
-import { useRouter } from "next/navigation";
-
 export default function AdminLoginPage() {
-  const router = useRouter();
-
   const [username, setUsername] =
     useState("");
 

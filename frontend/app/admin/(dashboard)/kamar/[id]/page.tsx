@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
   BedDouble,
@@ -14,15 +15,8 @@ import {
 } from "@/lib/admin-server-api";
 import { mediaUrl } from "@/lib/media";
 import type { Kamar } from "@/lib/types";
+import { rupiah } from "@/lib/format";
 
-const rupiah = new Intl.NumberFormat(
-  "id-ID",
-  {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  },
-);
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -62,12 +56,15 @@ export default async function KamarDetailPage({
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(300px,.7fr)]">
         <section className="overflow-hidden rounded-xl border border-(--line) bg-white">
-          <div className="aspect-[16/9] bg-(--cream) sm:aspect-[2/1]">
+          <div className="relative aspect-[16/9] bg-(--cream) sm:aspect-[2/1]">
             {image ? (
-              <img
+              <Image
                 src={image}
                 alt={room.nama}
-                className="size-full object-cover"
+                fill
+                unoptimized
+                sizes="(max-width: 1024px) 100vw, 65vw"
+                className="object-cover"
               />
             ) : (
               <div className="grid size-full place-items-center text-(--stone)">
@@ -108,7 +105,7 @@ export default async function KamarDetailPage({
             <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
               <Info
                 label="Harga"
-                value={`${rupiah.format(room.harga_bulanan)} /${room.periode_harga}`}
+                value={`${rupiah(room.harga_bulanan)} /${room.periode_harga}`}
               />
               <Info
                 label="Ukuran"

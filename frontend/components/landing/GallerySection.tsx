@@ -21,6 +21,7 @@ export default function GallerySection({ items }: GalleryProps) {
   if (!gallery.length) return null;
 
   const current = gallery[active];
+  const currentSrc = mediaUrl(current.path_foto);
   const desktopItems = gallery.slice(0, 5);
 
   // Navigasi Mobile
@@ -50,22 +51,23 @@ export default function GallerySection({ items }: GalleryProps) {
           </h2>
 
           <p className="mt-3 text-sm leading-6 text-(--stone) sm:text-base">
-            Dokumentasi kamar dan suasana Kos Bu Henny.
+            Dokumentasi kamar dan suasana Kos Omah Subardiman.
           </p>
         </div>
 
         {/* Gallery Mobile */}
         <div className="mt-8 lg:hidden">
           <div className="relative aspect-4/3 overflow-hidden rounded-[10px] bg-(--parchment)">
-            {mediaUrl(current.path_foto) && (
+            {currentSrc && (
               <Image
-                src={mediaUrl(current.path_foto)!}
+                src={currentSrc}
                 alt={
                   current.teks_alt ||
                   current.caption ||
-                  "Dokumentasi Kos Bu Henny"
+                  "Dokumentasi Kos Omah Subardiman"
                 }
                 fill
+                unoptimized
                 sizes="100vw"
                 className="object-cover"
               />
@@ -138,6 +140,8 @@ export default function GallerySection({ items }: GalleryProps) {
                       src={src}
                       alt=""
                       fill
+                      priority
+                      unoptimized
                       sizes="88px"
                       className="object-cover"
                     />
@@ -194,9 +198,10 @@ function GalleryImage({
         alt={
           item.teks_alt ||
           item.caption ||
-          "Dokumentasi Kos Bu Henny"
+          "Dokumentasi Kos Omah Subardiman"
         }
         fill
+        unoptimized
         sizes="50vw"
         className="object-cover transition-transform duration-500 hover:scale-[1.02]"
       />

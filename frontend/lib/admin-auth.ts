@@ -1,7 +1,7 @@
+
 import { cookies } from "next/headers";
 
-const BACKEND_URL =
-  process.env.BACKEND_INTERNAL_URL;
+import { getBackendBaseUrl } from "@/lib/backend-url";
 
 export const ADMIN_COOKIE =
   "kos_omah_subardiman_admin";
@@ -15,22 +15,19 @@ export type AdminSession = {
 export async function getAdminToken(): Promise<string | null> {
   const store = await cookies();
 
-  return (
-    store.get(ADMIN_COOKIE)?.value ??
-    null
-  );
+  return store.get(ADMIN_COOKIE)?.value ?? null;
 }
 
 export async function getServerAdmin(): Promise<AdminSession | null> {
   const token = await getAdminToken();
 
-  if (!token || !BACKEND_URL) {
+  if (!token) {
     return null;
   }
 
   try {
     const response = await fetch(
-      `${BACKEND_URL.replace(/\/$/, "")}/api/v1/auth/me`,
+      `${getBackendBaseUrl()}/api/v1/auth/me`,
       {
         method: "GET",
         headers: {

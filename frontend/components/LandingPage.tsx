@@ -7,10 +7,8 @@ import AboutSection from "./landing/AboutSection";
 import LocationSection from "./landing/LocationSection";
 import RoomSection from "./landing/RoomSection";
 
-import {
-  rupiah,
-  whatsappUrl,
-} from "@/lib/format";
+import { rupiah } from "@/lib/format";
+import { whatsappUrl } from "@/lib/whatsapp";
 import { mediaUrl } from "@/lib/media";
 import { serverGet } from "@/lib/server-api";
 
@@ -130,7 +128,7 @@ export default async function LandingPage() {
         {/* Rooms */}
         <RoomSection
           rooms={activeRooms}
-          whatsappUrl={whatsapp}
+          whatsappNumber={settings.nomor_whatsapp}
         />
 
         {/* Location */}

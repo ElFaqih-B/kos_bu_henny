@@ -1,13 +1,9 @@
+
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-const BACKEND_URL =
-  process.env.BACKEND_INTERNAL_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:8000";
-
-const ADMIN_COOKIE =
-  "kos_omah_subardiman_admin";
+import { getBackendBaseUrl } from "@/lib/backend-url";
+import { ADMIN_COOKIE } from "@/lib/admin-auth";
 
 export async function POST() {
   const store = await cookies();
@@ -16,7 +12,7 @@ export async function POST() {
   if (token) {
     try {
       await fetch(
-        `${BACKEND_URL.replace(/\/$/, "")}/api/v1/auth/logout`,
+        `${getBackendBaseUrl()}/api/v1/auth/logout`,
         {
           method: "POST",
           headers: {
@@ -26,7 +22,7 @@ export async function POST() {
         },
       );
     } catch {
-      // Tetap hapus cookie lokal.
+      // Cookie lokal tetap dihapus walaupun backend tidak tersedia.
     }
   }
 

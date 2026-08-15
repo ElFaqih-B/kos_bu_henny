@@ -1,6 +1,5 @@
-const BACKEND_URL =
-  process.env.BACKEND_INTERNAL_URL ||
-  "http://localhost:8000";
+
+import { getBackendBaseUrl } from "@/lib/backend-url";
 
 type ServerRequestOptions = RequestInit & {
   json?: unknown;
@@ -10,11 +9,11 @@ export async function serverRequest<T>(
   path: string,
   options: ServerRequestOptions = {},
 ): Promise<T> {
-  const url =
-    `${BACKEND_URL.replace(/\/$/, "")}` +
-    `/api/v1/${path.replace(/^\/+/, "")}`;
-
+  const cleanPath = path.replace(/^\/+/, "");
+  const url = `${getBackendBaseUrl()}/api/v1/${cleanPath}`;
   const headers = new Headers(options.headers);
+
+  headers.set("Accept", "application/json");
 
   if (options.json !== undefined) {
     headers.set("Content-Type", "application/json");
@@ -32,16 +31,18 @@ export async function serverRequest<T>(
 
   if (!response.ok) {
     let message =
-      `API error ${response.status}: ${path}`;
+      `API error ${response.status}: ${cleanPath}`;
 
     try {
       const data = await response.json();
 
       if (typeof data?.detail === "string") {
         message = data.detail;
+      } else if (typeof data?.message === "string") {
+        message = data.message;
       }
     } catch {
-      // Ignore invalid JSON.
+      // Gunakan pesan status jika response bukan JSON.
     }
 
     throw new Error(message);
@@ -54,34 +55,10 @@ export async function serverRequest<T>(
   return response.json() as Promise<T>;
 }
 
-export const serverGet = <T>(
+export function serverGet<T>(
   path: string,
-) =>
-  serverRequest<T>(path, {
+): Promise<T> {
+  return serverRequest<T>(path, {
     method: "GET",
   });
-
-export const serverPost = <T>(
-  path: string,
-  json?: unknown,
-) =>
-  serverRequest<T>(path, {
-    method: "POST",
-    json,
-  });
-
-export const serverPatch = <T>(
-  path: string,
-  json?: unknown,
-) =>
-  serverRequest<T>(path, {
-    method: "PATCH",
-    json,
-  });
-
-export const serverDelete = <T = void>(
-  path: string,
-) =>
-  serverRequest<T>(path, {
-    method: "DELETE",
-  });
+}

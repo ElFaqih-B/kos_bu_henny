@@ -378,8 +378,7 @@ export default function RoomForm({
               </h2>
 
               <p className="mt-1 text-[11px] text-(--muted)">
-                Atur URL, foto utama,
-                urutan, dan status kamar.
+                Atur foto utama, urutan, dan status kamar.
               </p>
             </div>
 
@@ -456,10 +455,7 @@ export default function RoomForm({
                 ? `/admin/kamar/${room.id}`
                 : "/admin/kamar"
             }
-            loading={
-              loading ||
-              uploadingMainImage
-            }
+            loading={loading}
             saveLabel="Simpan kamar"
             onDelete={
               room ? remove : undefined

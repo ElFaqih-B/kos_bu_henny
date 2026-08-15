@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = process.env.BACKEND_INTERNAL_URL;
+import { getBackendBaseUrl } from "@/lib/backend-url";
 
 type RouteContext = {
   params: Promise<{
@@ -12,17 +12,6 @@ async function proxy(
   request: NextRequest,
   context: RouteContext,
 ) {
-  if (!BACKEND_URL) {
-    return NextResponse.json(
-      {
-        detail: "BACKEND_INTERNAL_URL belum dikonfigurasi.",
-      },
-      {
-        status: 500,
-      },
-    );
-  }
-
   const { path } = await context.params;
 
   const backendPath = path.join("/");
@@ -30,7 +19,7 @@ async function proxy(
   const search = request.nextUrl.search;
 
   const targetUrl =
-    `${BACKEND_URL.replace(/\/$/, "")}/api/v1/${backendPath}${search}`;
+    `${getBackendBaseUrl()}/api/v1/${backendPath}${search}`;
 
   const headers = new Headers();
 

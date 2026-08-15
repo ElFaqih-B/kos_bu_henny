@@ -1,16 +1,16 @@
 "use client";
 
-import {
-  ChangeEvent,
-  useRef,
-  useState,
-} from "react";
-
-import heic2any from "heic2any";
+import Image from "next/image";
+import { ChangeEvent, useRef, useState } from "react";
 
 import { adminClientUpload } from "@/lib/admin-client";
-import type { UploadResponse } from "@/lib/types";
+import {
+  IMAGE_UPLOAD_ACCEPT,
+  isHeicFile,
+  prepareUploadFile,
+} from "@/lib/image-upload";
 import { mediaUrl } from "@/lib/media";
+import type { UploadResponse } from "@/lib/types";
 
 type Props = {
   label: string;
@@ -21,60 +21,15 @@ type Props = {
   disabled?: boolean;
 };
 
-const DEFAULT_ACCEPT =
-  "image/jpeg,image/png,image/webp,image/heic,image/heif";
-
-function isHeicFile(file: File): boolean {
-  return (
-    file.type === "image/heic" ||
-    file.type === "image/heif" ||
-    /\.(heic|heif)$/i.test(file.name)
-  );
-}
-
-async function prepareUploadFile(file: File): Promise<File> {
-  if (!isHeicFile(file)) {
-    return file;
-  }
-
-  const converted = await heic2any({
-    blob: file,
-    toType: "image/jpeg",
-    quality: 0.9,
-  });
-
-  const jpegBlob = Array.isArray(converted)
-    ? converted[0]
-    : converted;
-
-  if (!jpegBlob) {
-    throw new Error("Gagal mengonversi gambar HEIC.");
-  }
-
-  const jpegName = file.name.replace(
-    /\.(heic|heif)$/i,
-    ".jpg",
-  );
-
-  return new File(
-    [jpegBlob],
-    jpegName,
-    {
-      type: "image/jpeg",
-    },
-  );
-}
-
 export default function AdminMediaUpload({
   label,
   value,
   onChange,
   description,
-  accept = DEFAULT_ACCEPT,
+  accept = IMAGE_UPLOAD_ACCEPT,
   disabled = false,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
-
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -100,11 +55,9 @@ export default function AdminMediaUpload({
     setError("");
     setSuccess("");
 
-    
-
     try {
+      const wasHeic = isHeicFile(file);
       const uploadFile = await prepareUploadFile(file);
-
       const uploaded =
         await adminClientUpload<UploadResponse>(
           "admin/upload",
@@ -112,9 +65,8 @@ export default function AdminMediaUpload({
         );
 
       onChange(uploaded.url);
-
       setSuccess(
-        isHeicFile(file)
+        wasHeic
           ? "Foto HEIC berhasil dikonversi dan diupload."
           : "Foto berhasil diupload.",
       );
@@ -126,8 +78,6 @@ export default function AdminMediaUpload({
       );
     } finally {
       setUploading(false);
-
-      // Memungkinkan user memilih file yang sama lagi.
       event.target.value = "";
     }
   }
@@ -172,11 +122,16 @@ export default function AdminMediaUpload({
 
       <div className="overflow-hidden rounded-[10px] border border-(--line) bg-(--background)">
         {preview ? (
-          <img
-            src={preview}
-            alt={label}
-            className="aspect-16/10 w-full object-cover"
-          />
+          <div className="relative aspect-16/10 w-full">
+            <Image
+              src={preview}
+              alt={label}
+              fill
+              unoptimized
+              sizes="(max-width: 768px) 100vw, 768px"
+              className="object-cover"
+            />
+          </div>
         ) : (
           <div className="flex aspect-16/10 items-center justify-center px-4 text-center">
             <div>
@@ -185,7 +140,7 @@ export default function AdminMediaUpload({
               </p>
 
               <p className="mt-1 text-[10px] leading-4 text-(--muted)">
-                JPG, PNG, WebP, atau HEIC.
+                JPG, PNG, WebP, AVIF, atau HEIC/HEIF.
               </p>
             </div>
           </div>

@@ -10,15 +10,8 @@ import AdminButton from "@/components/admin/AdminButton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { adminServerGet } from "@/lib/admin-server-api";
 import type { Kamar } from "@/lib/types";
+import { rupiah } from "@/lib/format";
 
-const rupiah = new Intl.NumberFormat(
-  "id-ID",
-  {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  },
-);
 
 export default async function KamarPage() {
   const rooms = await adminServerGet<Kamar[]>(
@@ -185,7 +178,7 @@ function MobileRoomCard({
             />
             <InfoTile
               label="Harga"
-              value={rupiah.format(
+              value={rupiah(
                 room.harga_bulanan,
               )}
             />
@@ -249,7 +242,7 @@ function DesktopRoomRow({
 
       <td className="px-5 py-4">
         <span className="whitespace-nowrap text-sm font-semibold">
-          {rupiah.format(room.harga_bulanan)}
+          {rupiah(room.harga_bulanan)}
         </span>
         <span className="mt-0.5 block text-xs text-(--stone)">
           /{room.periode_harga}

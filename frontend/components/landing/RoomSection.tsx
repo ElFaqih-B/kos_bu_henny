@@ -19,14 +19,14 @@ import RoomCard from "./RoomCard";
 
 type RoomSectionProps = {
   rooms: Kamar[];
-  whatsappUrl?: string | null;
+  whatsappNumber?: string | null;
 };
 
 const ROOMS_PER_PAGE = 3;
 
 export default function RoomSection({
   rooms,
-  whatsappUrl,
+  whatsappNumber,
 }: RoomSectionProps) {
   const carouselRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -489,7 +489,7 @@ export default function RoomSection({
                 >
                   <RoomCard
                     room={room}
-                    whatsappUrl={whatsappUrl}
+                    whatsappNumber={whatsappNumber}
                   />
                 </div>
               ))}
@@ -538,9 +538,7 @@ export default function RoomSection({
                             <RoomCard
                               key={room.id}
                               room={room}
-                              whatsappUrl={
-                                whatsappUrl
-                              }
+                              whatsappNumber={whatsappNumber}
                               desktop
                             />
                           ),

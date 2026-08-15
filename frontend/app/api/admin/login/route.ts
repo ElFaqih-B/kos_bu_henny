@@ -1,12 +1,8 @@
+
 import { NextResponse } from "next/server";
 
-const BACKEND_URL =
-  process.env.BACKEND_INTERNAL_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:8000";
-
-const ADMIN_COOKIE =
-  "kos_omah_subardiman_admin";
+import { getBackendBaseUrl } from "@/lib/backend-url";
+import { ADMIN_COOKIE } from "@/lib/admin-auth";
 
 type LoginBody = {
   username?: string;
@@ -16,7 +12,6 @@ type LoginBody = {
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as LoginBody;
-
     const username = body.username?.trim();
     const password = body.password;
 
@@ -30,11 +25,12 @@ export async function POST(request: Request) {
     }
 
     const response = await fetch(
-      `${BACKEND_URL.replace(/\/$/, "")}/api/v1/auth/login`,
+      `${getBackendBaseUrl()}/api/v1/auth/login`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
         },
         body: JSON.stringify({
           username,
@@ -59,15 +55,6 @@ export async function POST(request: Request) {
       );
     }
 
-    /*
-     * Backend FastAPI membuat cookie.
-     * Kita tidak meneruskan Set-Cookie backend secara mentah,
-     * karena cookie tersebut berasal dari domain backend.
-     *
-     * Ambil token dari Set-Cookie lalu pasang ulang
-     * sebagai cookie pada domain frontend Next.js.
-     */
-
     const setCookie = response.headers.get("set-cookie");
 
     if (!setCookie) {
@@ -81,9 +68,7 @@ export async function POST(request: Request) {
     }
 
     const tokenMatch = setCookie.match(
-      new RegExp(
-        `${ADMIN_COOKIE}=([^;]+)`,
-      ),
+      new RegExp(`${ADMIN_COOKIE}=([^;]+)`),
     );
 
     if (!tokenMatch) {
@@ -96,18 +81,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const token = tokenMatch[1];
-
     const nextResponse = NextResponse.json(
-      data ?? {
-        username,
-      },
+      data ?? { username },
       { status: 200 },
     );
 
     nextResponse.cookies.set({
       name: ADMIN_COOKIE,
-      value: token,
+      value: tokenMatch[1],
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -121,7 +102,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        detail: "Tidak dapat terhubung ke backend.",
+        detail:
+          error instanceof Error &&
+          error.message.includes(
+            "BACKEND_INTERNAL_URL",
+          )
+            ? error.message
+            : "Tidak dapat terhubung ke backend.",
       },
       { status: 502 },
     );

@@ -9,19 +9,20 @@ import {
 
 import { rupiah } from "@/lib/format";
 import { mediaUrl } from "@/lib/media";
+import { buildRoomWhatsappUrl } from "@/lib/whatsapp";
 import type { Kamar } from "@/lib/types";
 
 
 type RoomCardProps = {
   room: Kamar;
-  whatsappUrl?: string | null;
+  whatsappNumber?: string | null;
   desktop?: boolean;
 };
 
 
 export default function RoomCard({
   room,
-  whatsappUrl,
+  whatsappNumber,
   desktop = false,
 }: RoomCardProps) {
   const image = mediaUrl(room.url_gambar);
@@ -61,19 +62,10 @@ export default function RoomCard({
       )}`
     : null;
 
-  const message = encodeURIComponent(
-    `Halo Bu Heni, saya tertarik dengan ${room.nama} dengan harga ${rupiah(
-      room.harga_bulanan,
-    )}/${room.periode_harga}. Apakah kamar ini masih tersedia?`,
+  const bookingUrl = buildRoomWhatsappUrl(
+    room,
+    whatsappNumber,
   );
-
-  const bookingUrl = whatsappUrl
-    ? `${whatsappUrl}${
-        whatsappUrl.includes("?")
-          ? "&"
-          : "?"
-      }text=${message}`
-    : null;
 
 
   // Desktop
@@ -374,6 +366,7 @@ export default function RoomCard({
               src={image}
               alt={room.nama}
               fill
+              loading="lazy"
               unoptimized
               sizes="84vw"
               className="object-cover"

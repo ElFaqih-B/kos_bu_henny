@@ -145,8 +145,8 @@ export default function DocumentationForm({
             Media dokumentasi
           </h2>
           <p className="mt-1 text-[11px] text-(--muted)">
-            Simpan path atau URL media yang sudah
-            tersedia di backend.
+            Upload foto dokumentasi yang akan ditampilkan
+            pada website.
           </p>
         </div>
 
@@ -156,7 +156,7 @@ export default function DocumentationForm({
           onChange={(url) =>
             setField("path_foto", url)
           }
-          description="Upload foto dokumentasi. URL media akan diisi otomatis."
+          description="Foto akan diupload dan URL media diisi otomatis."
           disabled={loading}
         />
 

@@ -7,7 +7,6 @@ import {
   Images,
 } from "lucide-react";
 import {
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -83,23 +82,6 @@ export default function RoomGallery({
     return result;
   }, [coverUrl, photos, roomName]);
 
-  /*
-   * Jika data gallery berubah, misalnya admin
-   * menambah/menghapus foto, jangan biarkan
-   * activeIndex menunjuk ke index yang sudah tidak ada.
-   */
-  useEffect(() => {
-    setActiveIndex((current) => {
-      if (items.length === 0) {
-        return 0;
-      }
-
-      return Math.min(
-        current,
-        items.length - 1,
-      );
-    });
-  }, [items.length]);
 
   if (items.length === 0) {
     return (

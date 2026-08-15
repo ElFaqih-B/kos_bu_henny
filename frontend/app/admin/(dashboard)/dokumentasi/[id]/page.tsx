@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Edit3, Images } from "lucide-react";
 
@@ -44,12 +45,15 @@ export default async function DokumentasiDetail({
       />
 
       <section className="max-w-3xl overflow-hidden rounded-xl border border-(--line) bg-white">
-        <div className="aspect-video bg-(--cream)">
+        <div className="relative aspect-video bg-(--cream)">
           {image ? (
-            <img
+            <Image
               src={image}
               alt={item.teks_alt}
-              className="size-full object-contain"
+              fill
+              unoptimized
+              sizes="(max-width: 768px) 100vw, 768px"
+              className="object-contain"
             />
           ) : (
             <div className="grid size-full place-items-center text-(--stone)">
