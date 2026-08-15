@@ -121,7 +121,7 @@ export default function SettingsForm({
           />
 
           <AdminInput
-            label="Instagram URL"
+            label="TikTok URL"
             value={form.tiktok_url}
             onChange={(event) =>
               setField(

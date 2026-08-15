@@ -141,7 +141,7 @@ export default async function LandingPage() {
       <Footer
         name={settings.nama_kos}
         whatsappUrl={whatsapp}
-        instagramUrl={
+        tiktokUrl={
           settings.tiktok_url
         }
       />
