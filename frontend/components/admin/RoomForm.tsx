@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  ChangeEvent,
-  useRef,
   useState,
 } from "react";
 
@@ -12,16 +10,12 @@ import {
   adminClientDelete,
   adminClientPatch,
   adminClientPost,
-  adminClientUpload,
 } from "@/lib/admin-client";
 
 import type {
   Cabang,
   Kamar,
-  UploadResponse,
 } from "@/lib/types";
-
-import { mediaUrl } from "@/lib/media";
 
 import {
   AdminInput,
@@ -31,6 +25,7 @@ import {
 
 import AdminFormActions from "@/components/admin/AdminFormActions";
 import RoomPhotoManager from "@/components/admin/RoomPhotoManager";
+import AdminMediaUpload from "@/components/admin/AdminMediaUpload";
 
 type Props = {
   room?: Kamar;
@@ -60,16 +55,9 @@ export default function RoomForm({
 }: Props) {
   const router = useRouter();
 
-  const mainImageInputRef =
-    useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(false);
-  const [uploadingMainImage, setUploadingMainImage] =
-    useState(false);
-
   const [error, setError] = useState("");
-  const [uploadSuccess, setUploadSuccess] =
-    useState("");
 
   const [form, setForm] = useState<FormState>({
     nama: room?.nama ?? "",
@@ -113,55 +101,6 @@ export default function RoomForm({
     }));
   }
 
-  async function uploadMainImage(
-    file: File,
-  ) {
-    setUploadingMainImage(true);
-    setError("");
-    setUploadSuccess("");
-
-    try {
-      const uploaded =
-        await adminClientUpload<UploadResponse>(
-          "admin/upload",
-          file,
-        );
-
-      setField(
-        "url_gambar",
-        uploaded.url,
-      );
-
-      setUploadSuccess(
-        "Foto utama berhasil diupload. Simpan kamar untuk menerapkan perubahan.",
-      );
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Gagal mengupload foto utama.",
-      );
-    } finally {
-      setUploadingMainImage(false);
-
-      if (mainImageInputRef.current) {
-        mainImageInputRef.current.value = "";
-      }
-    }
-  }
-
-  function handleMainImageChange(
-    event: ChangeEvent<HTMLInputElement>,
-  ) {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    void uploadMainImage(file);
-  }
-
   async function submit(
     event: React.FormEvent<HTMLFormElement>,
   ) {
@@ -169,7 +108,6 @@ export default function RoomForm({
 
     setLoading(true);
     setError("");
-    setUploadSuccess("");
 
     const payload = {
       ...form,
@@ -255,9 +193,6 @@ export default function RoomForm({
     }
   }
 
-  const mainImage = mediaUrl(
-    form.url_gambar,
-  );
 
   return (
     <form
@@ -460,78 +395,15 @@ export default function RoomForm({
               placeholder="kamar-standar-1"
             />
 
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold text-(--ink)">
-                    Foto utama
-                  </p>
-
-                  <p className="mt-1 text-[10px] leading-4 text-(--muted)">
-                    Digunakan sebagai gambar
-                    cover kamar pada listing
-                    dan halaman publik.
-                  </p>
-                </div>
-
-                <input
-                  ref={mainImageInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/avif"
-                  className="hidden"
-                  onChange={
-                    handleMainImageChange
-                  }
-                />
-
-                <button
-                  type="button"
-                  disabled={
-                    uploadingMainImage ||
-                    loading
-                  }
-                  onClick={() =>
-                    mainImageInputRef.current?.click()
-                  }
-                  className="shrink-0 rounded-[9px] bg-(--ink) px-3.5 py-2.5 text-[11px] font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {uploadingMainImage
-                    ? "Mengupload..."
-                    : form.url_gambar
-                      ? "Ganti foto"
-                      : "Upload foto"}
-                </button>
-              </div>
-
-              <div className="overflow-hidden rounded-[10px] border border-(--line) bg-(--background)">
-                {mainImage ? (
-                  <img
-                    src={mainImage}
-                    alt={`Foto utama ${form.nama || "kamar"}`}
-                    className="aspect-16/10 w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex aspect-16/10 items-center justify-center px-4 text-center">
-                    <div>
-                      <p className="text-xs font-semibold text-(--ink)">
-                        Belum ada foto utama
-                      </p>
-
-                      <p className="mt-1 text-[10px] leading-4 text-(--muted)">
-                        Pilih file gambar untuk
-                        menjadikannya cover kamar.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {uploadSuccess && (
-                <p className="text-[10px] leading-4 text-green-700">
-                  {uploadSuccess}
-                </p>
-              )}
-            </div>
+            <AdminMediaUpload
+              label="Foto utama"
+              value={form.url_gambar}
+              onChange={(url) =>
+                setField("url_gambar", url)
+              }
+              description="Digunakan sebagai cover kamar pada listing dan halaman publik."
+              disabled={loading}
+            />
 
             <AdminInput
               label="Urutan"

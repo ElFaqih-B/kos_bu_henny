@@ -10,6 +10,7 @@ import {
   AdminTextarea,
 } from "@/components/admin/AdminField";
 import AdminFormActions from "@/components/admin/AdminFormActions";
+import AdminMediaUpload from "@/components/admin/AdminMediaUpload";
 
 type Props = {
   settings: Pengaturan;
@@ -131,15 +132,14 @@ export default function SettingsForm({
           />
         </div>
 
-        <AdminInput
-          label="Hero image URL"
+        <AdminMediaUpload
+          label="Hero image"
           value={form.hero_image}
-          onChange={(event) =>
-            setField(
-              "hero_image",
-              event.target.value,
-            )
+          onChange={(url) =>
+            setField("hero_image", url)
           }
+          description="Upload gambar utama yang digunakan pada hero halaman depan."
+          disabled={loading}
         />
       </section>
 

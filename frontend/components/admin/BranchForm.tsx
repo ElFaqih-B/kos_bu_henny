@@ -14,6 +14,7 @@ import {
   AdminTextarea,
 } from "@/components/admin/AdminField";
 import AdminFormActions from "@/components/admin/AdminFormActions";
+import AdminMediaUpload from "@/components/admin/AdminMediaUpload";
 
 type Props = {
   branch?: Cabang;
@@ -221,15 +222,14 @@ export default function BranchForm({
           }
         />
 
-        <AdminInput
-          label="URL gambar"
+        <AdminMediaUpload
+          label="Foto cabang"
           value={form.url_gambar}
-          onChange={(event) =>
-            setField(
-              "url_gambar",
-              event.target.value,
-            )
+          onChange={(url) =>
+            setField("url_gambar", url)
           }
+          description="Upload foto cabang yang akan ditampilkan pada website."
+          disabled={loading}
         />
 
         <AdminInput

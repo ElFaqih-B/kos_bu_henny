@@ -103,6 +103,7 @@ export default function RoomCard({
                   src={image}
                   alt={room.nama}
                   fill
+                  unoptimized
                   sizes="33vw"
                   className="
                     object-cover
@@ -117,6 +118,7 @@ export default function RoomCard({
                 src={image}
                 alt={room.nama}
                 fill
+                unoptimized
                 sizes="33vw"
                 className="
                   object-cover
@@ -362,6 +364,7 @@ export default function RoomCard({
                 src={image}
                 alt={room.nama}
                 fill
+                unoptimized
                 sizes="84vw"
                 className="object-cover"
               />
@@ -371,6 +374,7 @@ export default function RoomCard({
               src={image}
               alt={room.nama}
               fill
+              unoptimized
               sizes="84vw"
               className="object-cover"
             />

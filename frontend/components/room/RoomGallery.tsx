@@ -7,22 +7,19 @@ import {
   Images,
 } from "lucide-react";
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
 
 import { mediaUrl } from "@/lib/media";
-import type {
-  KamarFoto,
-} from "@/lib/types";
-
+import type { KamarFoto } from "@/lib/types";
 
 type RoomGalleryProps = {
   roomName: string;
   coverUrl?: string | null;
   photos?: KamarFoto[];
 };
-
 
 type GalleryItem = {
   key: string;
@@ -31,14 +28,12 @@ type GalleryItem = {
   caption?: string | null;
 };
 
-
 export default function RoomGallery({
   roomName,
   coverUrl,
   photos = [],
 }: RoomGalleryProps) {
-  const [activeIndex, setActiveIndex] =
-    useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const items = useMemo<GalleryItem[]>(() => {
     const result: GalleryItem[] = [];
@@ -46,6 +41,7 @@ export default function RoomGallery({
 
     const cover = mediaUrl(coverUrl);
 
+    // Cover / foto utama kamar
     if (cover) {
       result.push({
         key: "cover",
@@ -57,6 +53,7 @@ export default function RoomGallery({
       used.add(cover);
     }
 
+    // Dokumentasi kamar
     [...photos]
       .filter((photo) => photo.aktif)
       .sort(
@@ -65,9 +62,7 @@ export default function RoomGallery({
           a.id - b.id,
       )
       .forEach((photo) => {
-        const src = mediaUrl(
-          photo.path_foto,
-        );
+        const src = mediaUrl(photo.path_foto);
 
         if (!src || used.has(src)) {
           return;
@@ -86,11 +81,25 @@ export default function RoomGallery({
       });
 
     return result;
-  }, [
-    coverUrl,
-    photos,
-    roomName,
-  ]);
+  }, [coverUrl, photos, roomName]);
+
+  /*
+   * Jika data gallery berubah, misalnya admin
+   * menambah/menghapus foto, jangan biarkan
+   * activeIndex menunjuk ke index yang sudah tidak ada.
+   */
+  useEffect(() => {
+    setActiveIndex((current) => {
+      if (items.length === 0) {
+        return 0;
+      }
+
+      return Math.min(
+        current,
+        items.length - 1,
+      );
+    });
+  }, [items.length]);
 
   if (items.length === 0) {
     return (
@@ -111,8 +120,7 @@ export default function RoomGallery({
     items.length - 1,
   );
 
-  const activeItem =
-    items[safeIndex];
+  const activeItem = items[safeIndex];
 
   function showPrevious() {
     setActiveIndex((current) =>
@@ -138,7 +146,8 @@ export default function RoomGallery({
           src={activeItem.src}
           alt={activeItem.alt}
           fill
-          priority
+          priority={safeIndex === 0}
+          unoptimized
           sizes="(max-width: 1024px) 100vw, 58vw"
           className="object-cover"
         />
@@ -164,8 +173,7 @@ export default function RoomGallery({
             </button>
 
             <div className="absolute bottom-3 right-3 rounded-md bg-black/55 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
-              {safeIndex + 1} /{" "}
-              {items.length}
+              {safeIndex + 1} / {items.length}
             </div>
           </>
         )}
@@ -181,33 +189,35 @@ export default function RoomGallery({
       {/* Thumbnails */}
       {items.length > 1 && (
         <div className="mt-4 flex snap-x gap-2 overflow-x-auto pb-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
-          {items.map(
-            (item, index) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() =>
-                  setActiveIndex(index)
-                }
-                aria-label={`Tampilkan foto ${
-                  index + 1
-                }`}
-                className={`relative aspect-4/3 w-24 shrink-0 snap-start overflow-hidden rounded-lg border-2 transition ${
-                  index === safeIndex
-                    ? "border-(--accent)"
-                    : "border-transparent opacity-65 hover:opacity-100"
-                }`}
-              >
-                <Image
-                  src={item.src}
-                  alt={item.alt}
-                  fill
-                  sizes="96px"
-                  className="object-cover"
-                />
-              </button>
-            ),
-          )}
+          {items.map((item, index) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setActiveIndex(index)}
+              aria-label={`Tampilkan foto ${
+                index + 1
+              }`}
+              aria-current={
+                index === safeIndex
+                  ? "true"
+                  : undefined
+              }
+              className={`relative aspect-4/3 w-24 shrink-0 snap-start overflow-hidden rounded-lg border-2 transition ${
+                index === safeIndex
+                  ? "border-(--accent)"
+                  : "border-transparent opacity-65 hover:opacity-100"
+              }`}
+            >
+              <Image
+                src={item.src}
+                alt={item.alt}
+                fill
+                unoptimized
+                sizes="96px"
+                className="object-cover"
+              />
+            </button>
+          ))}
         </div>
       )}
     </div>

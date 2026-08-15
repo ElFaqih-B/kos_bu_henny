@@ -17,6 +17,7 @@ import {
   AdminSelect,
 } from "@/components/admin/AdminField";
 import AdminFormActions from "@/components/admin/AdminFormActions";
+import AdminMediaUpload from "@/components/admin/AdminMediaUpload";
 
 type Props = {
   item?: Dokumentasi;
@@ -149,17 +150,14 @@ export default function DocumentationForm({
           </p>
         </div>
 
-        <AdminInput
-          label="URL / path foto"
-          required
+        <AdminMediaUpload
+          label="Foto dokumentasi"
           value={form.path_foto}
-          onChange={(event) =>
-            setField(
-              "path_foto",
-              event.target.value,
-            )
+          onChange={(url) =>
+            setField("path_foto", url)
           }
-          placeholder="/media/dokumentasi/foto.webp"
+          description="Upload foto dokumentasi. URL media akan diisi otomatis."
+          disabled={loading}
         />
 
         <AdminInput
