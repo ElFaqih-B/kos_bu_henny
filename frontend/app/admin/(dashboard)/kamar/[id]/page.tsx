@@ -56,7 +56,7 @@ export default async function KamarDetailPage({
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(300px,.7fr)]">
         <section className="overflow-hidden rounded-xl border border-(--line) bg-white">
-          <div className="relative aspect-[16/9] bg-(--cream) sm:aspect-[2/1]">
+          <div className="relative aspect-video bg-(--cream) sm:aspect-2/1">
             {image ? (
               <Image
                 src={image}
@@ -236,7 +236,7 @@ function Info({
       <p className="text-[9px] text-(--muted)">
         {label}
       </p>
-      <p className="mt-1 break-words text-xs font-semibold leading-5">
+      <p className="mt-1 wrap-break-word text-xs font-semibold leading-5">
         {value}
       </p>
     </div>
