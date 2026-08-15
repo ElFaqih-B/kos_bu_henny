@@ -550,7 +550,7 @@ class KontenHalaman(TimestampMixin, Base):
 # Pengaturan
 # =========================================================
 
-class Pengaturan(TimestampMixin, Base):
+class PengaturanSitus(TimestampMixin, Base):
     __tablename__ = "pengaturan_situs"
 
     id: Mapped[int] = mapped_column(
