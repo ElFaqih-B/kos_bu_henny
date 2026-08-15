@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { ExternalLink, MapPin, MessageCircle } from "lucide-react";
+import {
+  ArrowUpRight,
+  MapPin,
+  MessageCircle,
+} from "lucide-react";
 
 type FooterProps = {
   name: string;
@@ -7,7 +11,7 @@ type FooterProps = {
   tiktokUrl?: string | null;
 };
 
-function TikTokIcon({ size = 20 }: { size?: number }) {
+function TikTokIcon({ size = 18 }: { size?: number }) {
   return (
     <svg
       width={size}
@@ -31,125 +35,137 @@ export default function Footer({
   return (
     <footer className="bg-(--ink) text-white">
       <div className="container-page">
-        {/* Main */}
-        <div className="grid gap-10 py-12 sm:py-14 lg:grid-cols-[1.3fr_0.7fr_0.8fr] lg:gap-16 lg:py-16">
-          {/* Identity */}
-          <div className="max-w-md">
-            <h2 className="font-(family-name:--font-fraunces) text-2xl font-semibold tracking-[-0.02em]">
+        {/* Main footer */}
+        <div className="grid gap-12 py-14 sm:py-16 lg:grid-cols-[1.5fr_0.7fr_0.8fr] lg:gap-16 lg:py-20">
+          {/* Brand */}
+          <div className="max-w-lg">
+            <h2 className="font-(family-name:--font-fraunces) text-2xl font-semibold tracking-tight sm:text-3xl">
               {name}
             </h2>
 
-            <p className="mt-3 max-w-sm text-sm leading-6 text-white/90">
-              Temukan pilihan kamar, fasilitas, harga, dan lokasi kos dengan
-              informasi yang mudah diakses.
+            <p className="mt-4 max-w-md text-sm leading-7 text-white/65 sm:text-[0.95rem]">
+              Temukan pilihan kamar, fasilitas, harga, dan lokasi
+              Kos Omah Subardiman dengan informasi yang jelas dan
+              mudah diakses.
             </p>
 
-            <div className="mt-5 flex items-center gap-2 text-sm text-white/70">
-              <MapPin size={15} />
+            <div className="mt-6 flex items-start gap-2.5 text-sm text-white/50">
+              <MapPin
+                size={16}
+                className="mt-0.5 shrink-0"
+              />
 
               <span>
-                Lihat lokasi cabang pada bagian lokasi
+                Lihat lokasi dan alamat setiap cabang pada bagian
+                lokasi.
               </span>
             </div>
           </div>
 
           {/* Navigation */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/50">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-white/40">
               Navigasi
             </p>
 
-            <nav className="mt-4 flex flex-col items-start gap-3">
+            <nav className="mt-5 flex flex-col items-start gap-3.5">
               <Link
                 href="/#kamar"
-                className="text-sm text-white/70 transition hover:text-white"
+                className="text-sm text-white/65 transition-colors hover:text-white"
               >
                 Pilihan kamar
               </Link>
 
               <Link
                 href="/#galeri"
-                className="text-sm text-white/70 transition hover:text-white"
+                className="text-sm text-white/65 transition-colors hover:text-white"
               >
                 Galeri
               </Link>
 
               <Link
                 href="/#lokasi"
-                className="text-sm text-white/70 transition hover:text-white"
+                className="text-sm text-white/65 transition-colors hover:text-white"
               >
                 Lokasi
+              </Link>
+
+              <Link
+                href="/#tentang"
+                className="text-sm text-white/65 transition-colors hover:text-white"
+              >
+                Tentang kami
               </Link>
             </nav>
           </div>
 
           {/* Contact */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/50">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-white/40">
               Hubungi
             </p>
 
-            <div className="mt-4 rounded-lg bg-(--accent) p-4 transition hover:bg-(--accent-dark)">
-              {whatsappUrl ? (
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-2.5 text-sm font-bold text-white"
-                >
-                  <MessageCircle size={16} />
+            {whatsappUrl ? (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group mt-5 flex w-full items-center gap-3 border border-white/10 px-4 py-3.5 transition-colors hover:border-white/25 hover:bg-white/5"
+              >
+                <MessageCircle
+                  size={17}
+                  className="shrink-0"
+                />
 
-                  <span>WhatsApp</span>
+                <span className="text-sm font-medium">
+                  WhatsApp
+                </span>
 
-                  <ExternalLink
-                    size={13}
-                    className="ml-auto opacity-80 transition group-hover:opacity-100"
-                  />
-                </a>
-              ) : (
-                <p className="text-sm text-white/60">
-                  Informasi kontak belum tersedia.
-                </p>
-              )}
-            </div>
+                <ArrowUpRight
+                  size={15}
+                  className="ml-auto text-white/40 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white"
+                />
+              </a>
+            ) : (
+              <p className="mt-5 text-sm leading-6 text-white/40">
+                Informasi kontak belum tersedia.
+              </p>
+            )}
+
+            {tiktokUrl && (
+              <a
+                href={tiktokUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group mt-3 flex w-full items-center gap-3 border border-white/10 px-4 py-3.5 transition-colors hover:border-white/25 hover:bg-white/5"
+              >
+                <TikTokIcon size={18} />
+
+                <span className="text-sm font-medium">
+                  TikTok
+                </span>
+
+                <ArrowUpRight
+                  size={15}
+                  className="ml-auto text-white/40 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white"
+                />
+              </a>
+            )}
           </div>
         </div>
 
-        {/* Social Media */}
-        {tiktokUrl && (
-          <div className="border-t border-white/10 py-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/50">
-              Media sosial
+        {/* Bottom */}
+        <div className="border-t border-white/10">
+          <div className="flex flex-col gap-3 py-5 text-xs text-white/40 sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              © {year} {name}
             </p>
 
-            <a
-              href={tiktokUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="TikTok Kos Omah Subardiman"
-              className="group mt-4 inline-flex items-center gap-2.5 text-sm text-white/70 transition hover:text-white"
-            >
-              <TikTokIcon size={20} />
-
-              <span>TikTok</span>
-
-              <ExternalLink
-                size={13}
-                className="opacity-60 transition group-hover:opacity-100"
-              />
-            </a>
+            <p>
+              Informasi kamar dan ketersediaan dapat berubah
+              sewaktu-waktu.
+            </p>
           </div>
-        )}
-
-        {/* Bottom */}
-        <div className="flex flex-col gap-2 border-t border-white/10 py-5 text-xs text-white/90 sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            © {year} {name}
-          </p>
-
-          <p>
-            Informasi kamar dan ketersediaan dapat berubah sewaktu-waktu.
-          </p>
         </div>
       </div>
     </footer>
