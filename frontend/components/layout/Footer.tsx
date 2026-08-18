@@ -110,7 +110,7 @@ export default function Footer({
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group mt-5 flex w-full items-center gap-3 border border-white/10 px-4 py-3.5 transition-colors hover:border-white/25 hover:bg-white/5"
+                className="group mt-5 flex w-full items-center gap-3 border border-white/10 px-4 py-3.5 transition-colors hover:bg-green-900"
               >
                 <MessageCircle
                   size={17}
