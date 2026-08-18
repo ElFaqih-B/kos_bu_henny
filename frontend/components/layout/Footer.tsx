@@ -137,7 +137,7 @@ export default function Footer({
                 href={tiktokUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group mt-3 flex w-full items-center gap-3 border border-white/10 px-4 py-3.5 transition-colors hover:border-white/25 hover:bg-white/5"
+                className="group mt-3 flex w-full items-center gap-3 border border-white/10 px-4 py-3.5 transition-colors hover:border-white/25 hover:bg-(--tiktok)"
               >
                 <TikTokIcon size={18} />
 
