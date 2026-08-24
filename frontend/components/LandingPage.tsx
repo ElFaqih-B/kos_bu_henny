@@ -1,16 +1,16 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
+import AboutSection from "./landing/AboutSection";
 import GallerySection from "./landing/GallerySection";
 import HeroSection from "./landing/HeroSection";
-import AboutSection from "./landing/AboutSection";
 import LocationSection from "./landing/LocationSection";
 import RoomSection from "./landing/RoomSection";
 
-import { rupiah } from "@/lib/format";
-import { whatsappUrl } from "@/lib/whatsapp";
 import { mediaUrl } from "@/lib/media";
+import { rupiah } from "@/lib/format";
 import { serverGet } from "@/lib/server-api";
+import { whatsappUrl } from "@/lib/whatsapp";
 
 import type {
   Cabang,
@@ -19,42 +19,29 @@ import type {
   Pengaturan,
 } from "@/lib/types";
 
-
 export default async function LandingPage() {
-  // Data
-  const [
-    settings,
-    rooms,
-    branches,
-    galleryItems,
-  ] = await Promise.all([
-    serverGet<Pengaturan>("pengaturan"),
-    serverGet<Kamar[]>("kamar"),
-    serverGet<Cabang[]>("cabang"),
-    serverGet<Dokumentasi[]>("dokumentasi"),
-  ]);
+  const [settings, rooms, branches, galleryItems] =
+    await Promise.all([
+      serverGet<Pengaturan>("pengaturan"),
+      serverGet<Kamar[]>("kamar"),
+      serverGet<Cabang[]>("cabang"),
+      serverGet<Dokumentasi[]>("dokumentasi"),
+    ]);
 
-  // Summary
-  const activeRooms = rooms.filter(
-    (room) => room.aktif,
-  );
-
-  const activeBranches = branches.filter(
-    (branch) => branch.aktif,
-  );
-
-  const prices = activeRooms.map(
-    (room) => room.harga_bulanan,
-  );
+  const activeRooms = rooms.filter((room) => room.aktif);
+  const activeBranches = branches.filter((branch) => branch.aktif);
 
   const startingPrice =
-    prices.length > 0
-      ? Math.min(...prices)
+    activeRooms.length > 0
+      ? Math.min(
+          ...activeRooms.map(
+            (room) => room.harga_bulanan,
+          ),
+        )
       : 0;
 
   const availableRooms = activeRooms.reduce(
-    (total, room) =>
-      total + room.kamar_tersedia,
+    (total, room) => total + room.kamar_tersedia,
     0,
   );
 
@@ -64,35 +51,17 @@ export default async function LandingPage() {
 
   return (
     <>
-      {/* Navbar */}
-      <Navbar
-        whatsappUrl={whatsapp}
-      />
+      <Navbar whatsappUrl={whatsapp} />
 
       <main>
-        {/* Hero */}
         <HeroSection
-          imageUrl={
-            mediaUrl(
-              settings.hero_image,
-            ) || ""
-          }
-          headline={
-            settings.hero_headline
-          }
-          subheadline={
-            settings.hero_subheadline
-          }
-          primaryLabel={
-            settings.hero_cta_primary
-          }
+          imageUrl={mediaUrl(settings.hero_image) || ""}
+          headline={settings.hero_headline}
+          subheadline={settings.hero_subheadline}
+          primaryLabel={settings.hero_cta_primary}
           primaryHref="#kamar"
-          secondaryLabel={
-            settings.hero_cta_secondary
-          }
-          secondaryHref={
-            whatsapp || "#lokasi"
-          }
+          secondaryLabel={settings.hero_cta_secondary}
+          secondaryHref={whatsapp || "#lokasi"}
           stats={[
             {
               label: "Harga mulai",
@@ -116,34 +85,22 @@ export default async function LandingPage() {
           ]}
         />
 
-        <AboutSection
-        name={settings.nama_kos}
-        />
+        <AboutSection name={settings.nama_kos} />
 
-        {/* Gallery */}
-        <GallerySection
-          items={galleryItems}
-        />
+        <GallerySection items={galleryItems} />
 
-        {/* Rooms */}
         <RoomSection
           rooms={activeRooms}
           whatsappNumber={settings.nomor_whatsapp}
         />
 
-        {/* Location */}
-        <LocationSection
-          branches={activeBranches}
-        />
+        <LocationSection branches={activeBranches} />
       </main>
 
-      {/* Footer */}
       <Footer
         name={settings.nama_kos}
         whatsappUrl={whatsapp}
-        tiktokUrl={
-          settings.tiktok_url
-        }
+        tiktokUrl={settings.tiktok_url}
       />
     </>
   );
