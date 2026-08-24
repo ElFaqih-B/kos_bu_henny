@@ -2,9 +2,11 @@
 
 import {
   Check,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Loader2,
+  MapPin,
+  MessageCircle,
   X,
 } from "lucide-react";
 import {
@@ -14,137 +16,140 @@ import {
   useState,
 } from "react";
 
-import SearchBar from "@/components/ui/SearchBar";
+import { mediaUrl } from "@/lib/media";
+import { rupiah } from "@/lib/format";
 import type { Kamar } from "@/lib/types";
-import RoomCard from "./RoomCard";
 
-type RoomSectionProps = {
-  rooms: Kamar[];
+type RoomDetailModalProps = {
+  room: Kamar | null;
   whatsappNumber?: string | null;
+  onClose: () => void;
 };
 
-const ROOMS_PER_PAGE = 3;
+type GalleryItem = {
+  src: string;
+  alt: string;
+  caption?: string | null;
+};
 
-export default function RoomSection({
-  rooms,
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(
+    /\/+$/,
+    "",
+  ) ?? "";
+
+export default function RoomDetailModal({
+  room,
   whatsappNumber,
-}: RoomSectionProps) {
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  onClose,
+}: RoomDetailModalProps) {
+  const [detailRoom, setDetailRoom] =
+    useState<Kamar | null>(room);
 
-  const [selectedBranch, setSelectedBranch] =
-    useState("Semua");
-  const [search, setSearch] = useState("");
-  const [dropdownOpen, setDropdownOpen] =
+  const [activeImage, setActiveImage] =
+    useState(0);
+
+  const [loading, setLoading] =
     useState(false);
-  const [page, setPage] = useState(0);
 
-  const [selectedRoom, setSelectedRoom] =
-    useState<Kamar | null>(null);
+  const [visible, setVisible] =
+    useState(false);
 
-  const activeRooms = useMemo(
-    () =>
-      [...rooms]
-        .filter((room) => room.aktif)
-        .sort((a, b) => a.urutan - b.urutan),
-    [rooms],
-  );
+  const [closing, setClosing] =
+    useState(false);
 
-  const branches = useMemo(() => {
-    const names = activeRooms
-      .map((room) => room.cabang?.nama)
-      .filter(
-        (name): name is string => Boolean(name),
-      );
+  const closeTimerRef =
+    useRef<ReturnType<typeof setTimeout> | null>(
+      null,
+    );
 
-    return [
-      "Semua",
-      ...Array.from(new Set(names)),
-    ];
-  }, [activeRooms]);
-
-  const filteredRooms = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-
-    return activeRooms.filter((room) => {
-      const matchBranch =
-        selectedBranch === "Semua" ||
-        room.cabang?.nama === selectedBranch;
-
-      if (!matchBranch) return false;
-
-      if (!keyword) return true;
-
-      const searchableText = [
-        room.nama,
-        room.tipe,
-        room.ukuran,
-        room.deskripsi,
-        room.cabang?.nama,
-        ...(room.fasilitas ?? []),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return searchableText.includes(keyword);
-    });
-  }, [
-    activeRooms,
-    search,
-    selectedBranch,
-  ]);
-
-  const totalPages = Math.ceil(
-    filteredRooms.length / ROOMS_PER_PAGE,
-  );
-
+  /*
+   * Load detail kamar.
+   */
   useEffect(() => {
-    const closeDropdown = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(
-          event.target as Node,
-        )
-      ) {
-        setDropdownOpen(false);
+    if (!room) {
+      return;
+    }
+
+    let cancelled = false;
+
+    setDetailRoom(room);
+    setActiveImage(0);
+    setClosing(false);
+    setVisible(false);
+
+    const frame =
+      window.requestAnimationFrame(() => {
+        if (!cancelled) {
+          setVisible(true);
+        }
+      });
+
+    if (!room.slug || !API_BASE_URL) {
+      return () => {
+        cancelled = true;
+        window.cancelAnimationFrame(frame);
+      };
+    }
+
+    setLoading(true);
+
+    const loadDetail = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/kamar/${encodeURIComponent(
+            room.slug,
+          )}`,
+          {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+            },
+            cache: "no-store",
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `HTTP ${response.status}`,
+          );
+        }
+
+        const data =
+          (await response.json()) as Kamar;
+
+        if (cancelled) {
+          return;
+        }
+
+        setDetailRoom(data);
+        setActiveImage(0);
+      } catch {
+        if (!cancelled) {
+          setDetailRoom(room);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
-    const closeWithEscape = (
-      event: KeyboardEvent,
-    ) => {
-      if (event.key === "Escape") {
-        setDropdownOpen(false);
-        setSelectedRoom(null);
-      }
-    };
-
-    document.addEventListener(
-      "mousedown",
-      closeDropdown,
-    );
-
-    document.addEventListener(
-      "keydown",
-      closeWithEscape,
-    );
+    void loadDetail();
 
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        closeDropdown,
-      );
-
-      document.removeEventListener(
-        "keydown",
-        closeWithEscape,
-      );
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [room]);
 
+  /*
+   * Lock body scroll.
+   */
   useEffect(() => {
-    if (!selectedRoom) return;
+    if (!room) {
+      return;
+    }
 
     const previousOverflow =
       document.body.style.overflow;
@@ -155,785 +160,781 @@ export default function RoomSection({
       document.body.style.overflow =
         previousOverflow;
     };
-  }, [selectedRoom]);
+  }, [room]);
 
-  const changeSearch = (value: string) => {
-    setSearch(value);
-    setPage(0);
+  /*
+   * Keyboard interaction.
+   */
+  useEffect(() => {
+    if (!room) {
+      return;
+    }
 
-    carouselRef.current?.scrollTo({
-      left: 0,
-      behavior: "smooth",
-    });
+    const handleKeyDown = (
+      event: KeyboardEvent,
+    ) => {
+      if (event.key === "Escape") {
+        requestClose();
+      }
+
+      if (event.key === "ArrowLeft") {
+        previousImage();
+      }
+
+      if (event.key === "ArrowRight") {
+        nextImage();
+      }
+    };
+
+    document.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
+    };
+  }, [room]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
+  /*
+   * Close animation.
+   */
+  const requestClose = () => {
+    if (closing) {
+      return;
+    }
+
+    setClosing(true);
+    setVisible(false);
+
+    closeTimerRef.current = setTimeout(() => {
+      onClose();
+    }, 220);
   };
 
-  const changeBranch = (branch: string) => {
-    setSelectedBranch(branch);
-    setDropdownOpen(false);
-    setPage(0);
+  /*
+   * Gallery.
+   */
+  const images = useMemo<GalleryItem[]>(() => {
+    if (!detailRoom) {
+      return [];
+    }
 
-    carouselRef.current?.scrollTo({
-      left: 0,
-      behavior: "smooth",
-    });
-  };
+    const result: GalleryItem[] = [];
+    const used = new Set<string>();
 
-  const resetFilter = () => {
-    setSearch("");
-    setSelectedBranch("Semua");
-    setDropdownOpen(false);
-    setPage(0);
+    const cover = mediaUrl(
+      detailRoom.url_gambar,
+    );
 
-    carouselRef.current?.scrollTo({
-      left: 0,
-      behavior: "smooth",
-    });
-  };
+    if (cover) {
+      result.push({
+        src: cover,
+        alt: `Foto utama ${detailRoom.nama}`,
+        caption: null,
+      });
 
-  const scrollMobile = (
-    direction: "left" | "right",
-  ) => {
-    const carousel = carouselRef.current;
+      used.add(cover);
+    }
 
-    if (!carousel) return;
+    const photos = detailRoom.foto ?? [];
 
-    const card =
-      carousel.firstElementChild as
-        | HTMLElement
-        | null;
+    [...photos]
+      .filter((photo) => photo.aktif)
+      .sort(
+        (a, b) =>
+          a.urutan - b.urutan ||
+          a.id - b.id,
+      )
+      .forEach((photo) => {
+        const src = mediaUrl(
+          photo.path_foto,
+        );
 
-    const distance = card
-      ? card.offsetWidth + 12
-      : carousel.clientWidth * 0.85;
+        if (!src || used.has(src)) {
+          return;
+        }
 
-    carousel.scrollBy({
-      left:
-        direction === "right"
-          ? distance
-          : -distance,
-      behavior: "smooth",
-    });
-  };
+        used.add(src);
 
-  const previousPage = () => {
-    setPage((current) =>
-      Math.max(current - 1, 0),
+        result.push({
+          src,
+          alt:
+            photo.teks_alt ||
+            `Foto ${detailRoom.nama}`,
+          caption: photo.caption,
+        });
+      });
+
+    return result;
+  }, [detailRoom]);
+
+  const safeImageIndex =
+    images.length > 0
+      ? Math.min(
+          activeImage,
+          images.length - 1,
+        )
+      : 0;
+
+  const activeItem =
+    images[safeImageIndex];
+
+  const previousImage = () => {
+    if (images.length <= 1) {
+      return;
+    }
+
+    setActiveImage((current) =>
+      current === 0
+        ? images.length - 1
+        : current - 1,
     );
   };
 
-  const nextPage = () => {
-    setPage((current) =>
-      Math.min(
-        current + 1,
-        totalPages - 1,
-      ),
+  const nextImage = () => {
+    if (images.length <= 1) {
+      return;
+    }
+
+    setActiveImage((current) =>
+      current === images.length - 1
+        ? 0
+        : current + 1,
     );
   };
 
-  const openRoom = (room: Kamar) => {
-    setSelectedRoom(room);
-  };
+  /*
+   * WhatsApp.
+   */
+  const whatsappHref = useMemo(() => {
+    if (
+      !whatsappNumber ||
+      !detailRoom
+    ) {
+      return null;
+    }
 
-  const closeRoom = () => {
-    setSelectedRoom(null);
-  };
+    const phone =
+      whatsappNumber.replace(
+        /\D/g,
+        "",
+      );
 
-  if (!activeRooms.length) {
+    if (!phone) {
+      return null;
+    }
+
+    const message = [
+      `Halo, saya tertarik dengan kamar ${detailRoom.nama}.`,
+      `Harga: ${rupiah(
+        detailRoom.harga_bulanan,
+      )}/${detailRoom.periode_harga}.`,
+      "",
+      "Apakah kamar ini masih tersedia?",
+    ].join("\n");
+
+    return `https://wa.me/${phone}?text=${encodeURIComponent(
+      message,
+    )}`;
+  }, [
+    whatsappNumber,
+    detailRoom,
+  ]);
+
+  if (!room || !detailRoom) {
     return null;
   }
 
   return (
-    <>
-      <section
-        id="kamar"
-        className="overflow-hidden bg-(--cream) py-16 sm:py-20 lg:py-24"
-      >
-        <div className="container-page">
-          {/* Heading */}
-          <div className="max-w-xl">
-            <h2 className="text-[clamp(2rem,7vw,3.5rem)] leading-[1.05] tracking-[-0.03em] text-(--ink)">
-              Pilihan kamar
-            </h2>
+    <div
+      className={[
+        "fixed inset-0 z-[100]",
+        "flex items-center justify-center",
+        "bg-black/45",
+        "px-3 py-4",
+        "sm:px-5 sm:py-6",
+        "transition-opacity duration-250",
+        "ease-out",
+        visible && !closing
+          ? "opacity-100"
+          : "opacity-0",
+      ].join(" ")}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Detail ${detailRoom.nama}`}
+      onMouseDown={(event) => {
+        if (
+          event.target ===
+          event.currentTarget
+        ) {
+          requestClose();
+        }
+      }}
+    >
+      <div
+        className={[
+          "relative",
+          "flex flex-col",
+          "overflow-hidden",
+          "bg-white",
+          "shadow-[0_24px_80px_rgba(0,0,0,0.24)]",
 
-            <p className="mt-3 max-w-lg text-sm leading-6 text-(--stone) sm:text-base">
-              Lihat pilihan kamar yang tersedia
-              dan sesuaikan dengan kebutuhanmu.
+          /*
+           * MOBILE
+           */
+          "w-[calc(100vw-24px)]",
+          "max-w-[430px]",
+          "max-h-[82dvh]",
+          "rounded-2xl",
+
+          /*
+           * DESKTOP
+           */
+          "sm:w-full",
+          "sm:max-w-[820px]",
+          "sm:max-h-[82dvh]",
+          "sm:rounded-2xl",
+
+          "transform-gpu",
+          "transition-[transform,opacity]",
+          "duration-250",
+          "ease-[cubic-bezier(0.22,1,0.36,1)]",
+
+          visible && !closing
+            ? "translate-y-0 scale-100 opacity-100"
+            : "translate-y-3 scale-[0.985] opacity-0",
+        ].join(" ")}
+        onMouseDown={(event) => {
+          event.stopPropagation();
+        }}
+      >
+        {/* =====================================================
+            HEADER
+        ===================================================== */}
+        <header
+          className={[
+            "relative z-10",
+            "flex shrink-0",
+            "items-center justify-between",
+            "gap-3",
+            "border-b border-(--line)",
+            "bg-white",
+            "px-4 py-3",
+            "sm:px-5 sm:py-3.5",
+          ].join(" ")}
+        >
+          <div className="min-w-0">
+            <p className="text-[11px] text-(--stone)">
+              Detail kamar
             </p>
+
+            <h2
+              className={[
+                "truncate",
+                "text-base font-semibold",
+                "text-(--ink)",
+                "sm:text-lg",
+              ].join(" ")}
+            >
+              {detailRoom.nama}
+            </h2>
           </div>
 
-          {/* Search & Filter */}
-          <div className="mt-6 grid gap-3 lg:grid-cols-[minmax(280px,360px)_1fr] lg:items-center">
-            <SearchBar
-              value={search}
-              onChange={changeSearch}
-              placeholder="Cari kamar, fasilitas, atau tipe..."
-            />
+          <button
+            type="button"
+            onClick={requestClose}
+            aria-label="Tutup detail kamar"
+            className={[
+              "grid size-9 shrink-0",
+              "place-items-center",
+              "rounded-lg",
+              "border border-(--line)",
+              "bg-white",
+              "text-(--ink)",
+              "transition-all duration-200",
+              "hover:bg-(--cream)",
+              "active:scale-90",
+              "sm:size-10",
+            ].join(" ")}
+          >
+            <X size={18} />
+          </button>
+        </header>
 
-            {/* Mobile Filter */}
-            {branches.length > 2 && (
-              <div
-                ref={dropdownRef}
-                className="relative lg:hidden"
-              >
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDropdownOpen(
-                      (current) => !current,
-                    )
-                  }
-                  aria-expanded={dropdownOpen}
-                  className="
-                    flex min-h-11 w-full
-                    items-center justify-between
-                    gap-4 rounded-lg
-                    border border-(--line)
-                    bg-white px-4
-                    text-sm
-                    transition
-                    hover:border-(--line-strong)
-                  "
-                >
-                  <span className="text-(--stone)">
-                    Cabang
-                  </span>
+        {/* =====================================================
+            MAIN
+            Mobile  : gallery -> content
+            Desktop : gallery | content
+        ===================================================== */}
+        <div
+          className={[
+            "min-h-0 flex-1",
+            "flex flex-col",
+            "overflow-hidden",
 
-                  <span className="ml-auto truncate font-medium text-(--ink)">
-                    {selectedBranch === "Semua"
-                      ? "Semua cabang"
-                      : selectedBranch}
-                  </span>
+            "sm:grid",
+            "sm:grid-cols-[1.05fr_0.95fr]",
+          ].join(" ")}
+        >
+          {/* ===================================================
+              GALLERY
+          =================================================== */}
+          <div
+            className={[
+              "relative shrink-0",
+              "bg-(--cream)",
 
-                  <ChevronDown
-                    size={17}
-                    className={`shrink-0 text-(--stone) transition-transform duration-200 ${
-                      dropdownOpen
-                        ? "rotate-180"
-                        : ""
-                    }`}
-                  />
-                </button>
+              /*
+               * Mobile:
+               * jangan biarkan foto mengambil
+               * sebagian besar layar.
+               */
+              "h-[190px]",
 
-                {dropdownOpen && (
+              /*
+               * Small mobile sedikit lebih besar.
+               */
+              "xs:h-[205px]",
+
+              /*
+               * Desktop:
+               * gallery mendapat area sendiri.
+               */
+              "sm:h-full",
+              "sm:min-h-[420px]",
+            ].join(" ")}
+          >
+            {activeItem ? (
+              <>
+                <img
+                  src={activeItem.src}
+                  alt={activeItem.alt}
+                  className={[
+                    "h-full w-full",
+                    "object-cover",
+                  ].join(" ")}
+                />
+
+                {/* Gradient bawah supaya
+                    indikator tetap terbaca */}
+                <div
+                  className={[
+                    "pointer-events-none",
+                    "absolute inset-x-0 bottom-0",
+                    "h-24",
+                    "bg-gradient-to-t",
+                    "from-black/45",
+                    "to-transparent",
+                  ].join(" ")}
+                />
+
+                {images.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={previousImage}
+                      aria-label="Foto sebelumnya"
+                      className={[
+                        "absolute left-3 top-1/2",
+                        "grid size-8",
+                        "-translate-y-1/2",
+                        "place-items-center",
+                        "rounded-full",
+                        "bg-black/45",
+                        "text-white",
+                        "backdrop-blur-sm",
+                        "transition-all duration-200",
+                        "hover:bg-black/60",
+                        "active:scale-90",
+                        "sm:left-4 sm:size-10",
+                      ].join(" ")}
+                    >
+                      <ChevronLeft
+                        size={18}
+                      />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={nextImage}
+                      aria-label="Foto berikutnya"
+                      className={[
+                        "absolute right-3 top-1/2",
+                        "grid size-8",
+                        "-translate-y-1/2",
+                        "place-items-center",
+                        "rounded-full",
+                        "bg-black/45",
+                        "text-white",
+                        "backdrop-blur-sm",
+                        "transition-all duration-200",
+                        "hover:bg-black/60",
+                        "active:scale-90",
+                        "sm:right-4 sm:size-10",
+                      ].join(" ")}
+                    >
+                      <ChevronRight
+                        size={18}
+                      />
+                    </button>
+
+                    {/* Counter */}
+                    <div
+                      className={[
+                        "absolute bottom-3 right-3",
+                        "rounded-full",
+                        "bg-black/55",
+                        "px-2.5 py-1",
+                        "text-[10px] font-medium",
+                        "text-white",
+                        "backdrop-blur-sm",
+                        "sm:bottom-4 sm:right-4",
+                      ].join(" ")}
+                    >
+                      {safeImageIndex + 1} /{" "}
+                      {images.length}
+                    </div>
+                  </>
+                )}
+
+                {activeItem.caption && (
                   <div
-                    className="
-                      absolute inset-x-0 top-full
-                      z-30 mt-2
-                      max-h-64 overflow-y-auto
-                      rounded-lg
-                      border border-(--line)
-                      bg-white p-1.5
-                      shadow-[0_12px_30px_rgba(50,45,41,0.12)]
-                    "
+                    className={[
+                      "absolute bottom-3 left-3",
+                      "max-w-[65%]",
+                      "rounded-md",
+                      "bg-black/50",
+                      "px-2.5 py-1",
+                      "text-[10px]",
+                      "text-white",
+                      "backdrop-blur-sm",
+                    ].join(" ")}
                   >
-                    {branches.map((branch) => {
-                      const active =
-                        selectedBranch === branch;
-
-                      return (
-                        <button
-                          key={branch}
-                          type="button"
-                          onClick={() =>
-                            changeBranch(branch)
-                          }
-                          className={`
-                            flex min-h-11 w-full
-                            items-center justify-between
-                            gap-3 rounded-md
-                            px-3 text-left
-                            text-sm transition
-                            ${
-                              active
-                                ? "bg-(--cream) font-semibold text-(--ink)"
-                                : "font-medium text-(--ink-soft) hover:bg-(--cream)"
-                            }
-                          `}
-                        >
-                          <span className="truncate">
-                            {branch === "Semua"
-                              ? "Semua cabang"
-                              : branch}
-                          </span>
-
-                          {active && (
-                            <Check
-                              size={17}
-                              className="shrink-0 text-(--accent)"
-                            />
-                          )}
-                        </button>
-                      );
-                    })}
+                    {activeItem.caption}
                   </div>
                 )}
+              </>
+            ) : (
+              <div
+                className={[
+                  "flex h-full",
+                  "items-center justify-center",
+                  "text-sm text-(--stone)",
+                ].join(" ")}
+              >
+                Foto kamar belum tersedia
               </div>
             )}
 
-            {/* Desktop Filter */}
-            {branches.length > 2 && (
-              <div className="hidden flex-wrap justify-end gap-2 lg:flex">
-                {branches.map((branch) => {
-                  const active =
-                    selectedBranch === branch;
+            {loading && (
+              <div
+                className={[
+                  "absolute left-3 top-3",
+                  "flex items-center gap-1.5",
+                  "rounded-full",
+                  "bg-black/50",
+                  "px-2.5 py-1.5",
+                  "text-[10px]",
+                  "text-white",
+                  "backdrop-blur-sm",
+                ].join(" ")}
+              >
+                <Loader2
+                  size={12}
+                  className="animate-spin"
+                />
 
-                  return (
-                    <button
-                      key={branch}
-                      type="button"
-                      onClick={() =>
-                        changeBranch(branch)
-                      }
-                      className={`
-                        min-h-10 rounded-lg
-                        border px-4 text-sm
-                        font-medium transition
-                        ${
-                          active
-                            ? "border-(--ink) bg-(--ink) text-white"
-                            : "border-(--line) bg-white text-(--ink) hover:border-(--line-strong)"
-                        }
-                      `}
-                    >
-                      {branch === "Semua"
-                        ? "Semua"
-                        : branch}
-                    </button>
-                  );
-                })}
+                Memuat
               </div>
             )}
           </div>
 
-          {/* Filter Status */}
-          {(search ||
-            selectedBranch !== "Semua") && (
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <p className="text-xs text-(--stone)">
-                {filteredRooms.length} kamar ditemukan
-              </p>
-
-              <button
-                type="button"
-                onClick={resetFilter}
-                className="text-xs font-semibold text-(--accent) transition hover:text-(--accent-dark)"
-              >
-                Reset filter
-              </button>
-            </div>
-          )}
-
-          {/* Empty */}
-          {!filteredRooms.length && (
-            <div className="mt-8 rounded-[10px] border border-(--line) bg-white px-5 py-10 text-center">
-              <p className="font-medium text-(--ink)">
-                Kamar tidak ditemukan
-              </p>
-
-              <p className="mt-1 text-sm text-(--stone)">
-                Coba ubah pencarian atau cabang.
-              </p>
-            </div>
-          )}
-
-          {/* Mobile */}
-          {filteredRooms.length > 0 && (
-            <div className="relative mt-8 lg:hidden">
-              {filteredRooms.length > 1 && (
-                <div className="mb-3 flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      scrollMobile("left")
-                    }
-                    aria-label="Kamar sebelumnya"
-                    className="
-                      grid size-11 place-items-center
-                      rounded-lg border
-                      border-(--line)
-                      bg-white text-(--ink)
-                      transition active:scale-95
-                    "
-                  >
-                    <ChevronLeft size={19} />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      scrollMobile("right")
-                    }
-                    aria-label="Kamar berikutnya"
-                    className="
-                      grid size-11 place-items-center
-                      rounded-lg border
-                      border-(--line)
-                      bg-white text-(--ink)
-                      transition active:scale-95
-                    "
-                  >
-                    <ChevronRight size={19} />
-                  </button>
-                </div>
-              )}
-
-              <div
-                ref={carouselRef}
-                className="
-                  mx-[-8vw]
-                  flex
-                  snap-x
-                  snap-mandatory
-                  gap-3
-                  overflow-x-auto
-                  scroll-smooth
-                  overscroll-x-contain
-                  px-[16vw]
-                  pb-2
-                  scrollbar-none
-                  [&::-webkit-scrollbar]:hidden
-                "
-              >
-                {filteredRooms.map((room) => (
-                  <div
-                    key={room.id}
-                    className="
-                      w-[84vw]
-                      max-w-80
-                      shrink-0
-                      snap-center
-                      snap-always
-                    "
-                  >
-                    <RoomCard
-                      room={room}
-                      whatsappNumber={
-                        whatsappNumber
-                      }
-                      onDetail={() =>
-                        openRoom(room)
-                      }
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Desktop */}
-          {filteredRooms.length > 0 && (
-            <div className="mt-10 hidden lg:block">
-              <div className="overflow-hidden">
-                <div
-                  className="
-                    flex
-                    transition-transform
-                    duration-500
-                    ease-[cubic-bezier(0.22,1,0.36,1)]
-                  "
-                  style={{
-                    transform: `translateX(-${page * 100}%)`,
-                  }}
-                >
-                  {Array.from({
-                    length: totalPages,
-                  }).map((_, pageIndex) => {
-                    const start =
-                      pageIndex *
-                      ROOMS_PER_PAGE;
-
-                    const pageRooms =
-                      filteredRooms.slice(
-                        start,
-                        start + ROOMS_PER_PAGE,
-                      );
-
-                    return (
-                      <div
-                        key={pageIndex}
-                        className="w-full shrink-0"
-                      >
-                        <div className="grid grid-cols-3 gap-5">
-                          {pageRooms.map(
-                            (room) => (
-                              <RoomCard
-                                key={room.id}
-                                room={room}
-                                whatsappNumber={
-                                  whatsappNumber
-                                }
-                                desktop
-                                onDetail={() =>
-                                  openRoom(room)
-                                }
-                              />
-                            ),
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {totalPages > 1 && (
-                <div className="mt-6 flex items-center justify-between border-t border-(--line) pt-5">
-                  <p className="text-sm text-(--stone)">
-                    {page + 1} dari{" "}
-                    {totalPages}
-                  </p>
-
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={previousPage}
-                      disabled={page === 0}
-                      aria-label="Halaman kamar sebelumnya"
-                      className="
-                        grid size-11 place-items-center
-                        rounded-lg border
-                        border-(--line)
-                        bg-white text-(--ink)
-                        transition
-                        hover:border-(--line-strong)
-                        disabled:cursor-not-allowed
-                        disabled:opacity-35
-                      "
-                    >
-                      <ChevronLeft size={19} />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={nextPage}
-                      disabled={
-                        page === totalPages - 1
-                      }
-                      aria-label="Halaman kamar berikutnya"
-                      className="
-                        grid size-11 place-items-center
-                        rounded-lg border
-                        border-(--line)
-                        bg-white text-(--ink)
-                        transition
-                        hover:border-(--line-strong)
-                        disabled:cursor-not-allowed
-                        disabled:opacity-35
-                      "
-                    >
-                      <ChevronRight size={19} />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Room Detail Modal */}
-      {selectedRoom && (
-        <div
-          className="
-            fixed inset-0 z-[100]
-            flex items-end justify-center
-            bg-black/50
-            p-0
-            sm:items-center
-            sm:p-4
-          "
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="room-modal-title"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              closeRoom();
-            }
-          }}
-        >
+          {/* ===================================================
+              DETAIL CONTENT
+          =================================================== */}
           <div
-            className="
-              relative flex w-full
-              max-h-[92dvh]
-              flex-col overflow-hidden
-              rounded-t-2xl
-              bg-white
-              shadow-2xl
-              animate-[roomModalIn_220ms_ease-out]
-              sm:max-w-2xl
-              sm:rounded-2xl
-              lg:max-w-3xl
-            "
+            className={[
+              "min-h-0",
+              "overflow-y-auto",
+              "overscroll-contain",
+              "scrollbar-none",
+              "[&::-webkit-scrollbar]:hidden",
+              "bg-white",
+            ].join(" ")}
           >
-            {/* Header */}
             <div
-              className="
-                flex shrink-0
-                items-center justify-between
-                border-b border-(--line)
-                px-5 py-4
-                sm:px-6
-              "
+              className={[
+                "px-4 py-4",
+                "sm:px-6 sm:py-6",
+              ].join(" ")}
             >
-              <div className="min-w-0 pr-4">
-                <p className="text-xs font-medium uppercase tracking-[0.12em] text-(--stone)">
-                  Detail kamar
+              {/* Type */}
+              <p className="text-xs text-(--stone)">
+                {detailRoom.tipe}
+              </p>
+
+              {/* Name */}
+              <h3
+                className={[
+                  "mt-1",
+                  "text-xl font-semibold",
+                  "leading-tight",
+                  "tracking-[-0.02em]",
+                  "text-(--ink)",
+                  "sm:text-2xl",
+                ].join(" ")}
+              >
+                {detailRoom.nama}
+              </h3>
+
+              {/* Location */}
+              {detailRoom.cabang?.nama && (
+                <div
+                  className={[
+                    "mt-2",
+                    "flex items-center",
+                    "gap-1.5",
+                    "text-xs text-(--stone)",
+                    "sm:text-sm",
+                  ].join(" ")}
+                >
+                  <MapPin
+                    size={14}
+                    className="shrink-0"
+                  />
+
+                  <span>
+                    {detailRoom.cabang.nama}
+                  </span>
+                </div>
+              )}
+
+              {/* =================================================
+                  PRICE
+              ================================================= */}
+              <div className="mt-4">
+                <p className="text-[11px] text-(--stone)">
+                  Harga per bulan
                 </p>
 
-                <h3
-                  id="room-modal-title"
-                  className="mt-1 truncate text-lg font-semibold text-(--ink) sm:text-xl"
-                >
-                  {selectedRoom.nama}
-                </h3>
-              </div>
-
-              <button
-                type="button"
-                onClick={closeRoom}
-                aria-label="Tutup detail kamar"
-                className="
-                  grid size-10 shrink-0
-                  place-items-center
-                  rounded-full
-                  border border-(--line)
-                  bg-white
-                  text-(--ink)
-                  transition
-                  hover:bg-(--cream)
-                  active:scale-95
-                "
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="min-h-0 overflow-y-auto">
-              {/* Room Image */}
-              <div
-                className="
-                  relative
-                  aspect-[4/3]
-                  w-full
-                  overflow-hidden
-                  bg-(--cream)
-                  sm:aspect-[16/9]
-                "
-              >
-                {selectedRoom.foto ? (
-                  <img
-                    src={selectedRoom.foto}
-                    alt={selectedRoom.nama}
-                    className="
-                      h-full w-full
-                      object-cover
-                    "
-                  />
-                ) : (
-                  <div
-                    className="
-                      grid h-full w-full
-                      place-items-center
-                      text-sm text-(--stone)
-                    "
+                <div className="mt-0.5 flex items-baseline gap-1.5">
+                  <span
+                    className={[
+                      "text-xl font-bold",
+                      "text-(--accent)",
+                    ].join(" ")}
                   >
-                    Foto kamar belum tersedia
-                  </div>
-                )}
+                    {rupiah(
+                      detailRoom.harga_bulanan,
+                    )}
+                  </span>
+
+                  <span className="text-xs text-(--stone)">
+                    / {detailRoom.periode_harga}
+                  </span>
+                </div>
               </div>
 
-              <div className="space-y-6 px-5 py-6 sm:px-6 sm:py-7">
-                {/* Price */}
-                <div>
-                  <p className="text-xs text-(--stone)">
-                    Harga per bulan
+              {/* =================================================
+                  QUICK INFO
+              ================================================= */}
+              <div
+                className={[
+                  "mt-4",
+                  "grid grid-cols-2",
+                  "gap-2",
+                ].join(" ")}
+              >
+                <div
+                  className={[
+                    "rounded-lg",
+                    "border border-(--line)",
+                    "bg-(--cream)",
+                    "px-3 py-2.5",
+                  ].join(" ")}
+                >
+                  <p className="text-[10px] text-(--stone)">
+                    Ketersediaan
                   </p>
 
-                  <p className="mt-1 text-2xl font-semibold text-(--ink)">
-                    Rp{" "}
-                    {selectedRoom.harga_bulanan.toLocaleString(
-                      "id-ID",
-                    )}
+                  <p
+                    className={[
+                      "mt-0.5",
+                      "text-sm font-semibold",
+                      detailRoom.kamar_tersedia >
+                      0
+                        ? "text-(--accent)"
+                        : "text-(--stone)",
+                    ].join(" ")}
+                  >
+                    {detailRoom.kamar_tersedia}{" "}
+                    kamar
                   </p>
                 </div>
 
-                {/* Basic Information */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl bg-(--cream) p-4">
-                    <p className="text-xs text-(--stone)">
-                      Tipe
-                    </p>
+                <div
+                  className={[
+                    "rounded-lg",
+                    "border border-(--line)",
+                    "bg-(--cream)",
+                    "px-3 py-2.5",
+                  ].join(" ")}
+                >
+                  <p className="text-[10px] text-(--stone)">
+                    Ukuran
+                  </p>
 
-                    <p className="mt-1 text-sm font-semibold text-(--ink)">
-                      {selectedRoom.tipe ||
-                        "-"}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl bg-(--cream) p-4">
-                    <p className="text-xs text-(--stone)">
-                      Ukuran
-                    </p>
-
-                    <p className="mt-1 text-sm font-semibold text-(--ink)">
-                      {selectedRoom.ukuran ||
-                        "-"}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl bg-(--cream) p-4">
-                    <p className="text-xs text-(--stone)">
-                      Ketersediaan
-                    </p>
-
-                    <p className="mt-1 text-sm font-semibold text-(--ink)">
-                      {selectedRoom.kamar_tersedia}{" "}
-                      kamar
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl bg-(--cream) p-4">
-                    <p className="text-xs text-(--stone)">
-                      Cabang
-                    </p>
-
-                    <p className="mt-1 truncate text-sm font-semibold text-(--ink)">
-                      {selectedRoom.cabang
-                        ?.nama || "-"}
-                    </p>
-                  </div>
+                  <p className="mt-0.5 text-sm font-semibold text-(--ink)">
+                    {detailRoom.ukuran ||
+                      "-"}
+                  </p>
                 </div>
+              </div>
 
-                {/* Description */}
-                {selectedRoom.deskripsi && (
-                  <div>
+              {/* =================================================
+                  FACILITIES
+              ================================================= */}
+              {detailRoom.fasilitas &&
+                detailRoom.fasilitas.length >
+                  0 && (
+                  <section className="mt-5">
                     <h4 className="text-sm font-semibold text-(--ink)">
-                      Tentang kamar
+                      Fasilitas
                     </h4>
 
-                    <p className="mt-2 text-sm leading-6 text-(--stone)">
-                      {selectedRoom.deskripsi}
-                    </p>
-                  </div>
-                )}
-
-                {/* Facilities */}
-                {selectedRoom.fasilitas &&
-                  selectedRoom.fasilitas.length >
-                    0 && (
-                    <div>
-                      <h4 className="text-sm font-semibold text-(--ink)">
-                        Fasilitas
-                      </h4>
-
-                      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        {selectedRoom.fasilitas.map(
-                          (facility) => (
-                            <div
-                              key={facility}
-                              className="
-                                flex items-center
-                                gap-2.5
-                                rounded-lg
-                                border
-                                border-(--line)
-                                px-3 py-2.5
-                              "
+                    <div
+                      className={[
+                        "mt-2.5",
+                        "grid grid-cols-2",
+                        "gap-x-3 gap-y-2",
+                      ].join(" ")}
+                    >
+                      {detailRoom.fasilitas.map(
+                        (facility, index) => (
+                          <div
+                            key={`${facility}-${index}`}
+                            className={[
+                              "flex items-center",
+                              "gap-2",
+                              "min-w-0",
+                            ].join(" ")}
+                          >
+                            <span
+                              className={[
+                                "grid size-5 shrink-0",
+                                "place-items-center",
+                                "rounded-full",
+                                "bg-(--cream)",
+                                "text-(--accent)",
+                              ].join(" ")}
                             >
                               <Check
-                                size={16}
-                                className="shrink-0 text-(--accent)"
+                                size={12}
+                                strokeWidth={2.5}
                               />
+                            </span>
 
-                              <span className="text-sm text-(--ink-soft)">
-                                {facility}
-                              </span>
-                            </div>
-                          ),
-                        )}
-                      </div>
+                            <span
+                              className={[
+                                "truncate",
+                                "text-xs",
+                                "text-(--ink-soft)",
+                              ].join(" ")}
+                            >
+                              {facility}
+                            </span>
+                          </div>
+                        ),
+                      )}
                     </div>
-                  )}
-              </div>
-            </div>
+                  </section>
+                )}
 
-            {/* Footer */}
-            {whatsappNumber && (
-              <div
-                className="
-                  shrink-0
-                  border-t border-(--line)
-                  bg-white
-                  px-5 py-4
-                  sm:px-6
-                "
-              >
-                <a
-                  href={`https://wa.me/${whatsappNumber.replace(
-                    /\D/g,
-                    "",
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="
-                    flex min-h-12 w-full
-                    items-center justify-center
-                    rounded-lg
-                    bg-(--accent)
-                    px-5
-                    text-sm font-semibold
-                    text-white
-                    transition
-                    hover:bg-(--accent-dark)
-                    active:scale-[0.99]
-                  "
-                >
-                  Tanya kamar ini via WhatsApp
-                </a>
-              </div>
-            )}
+              {/* =================================================
+                  DESCRIPTION
+              ================================================= */}
+              {detailRoom.deskripsi && (
+                <section className="mt-5">
+                  <h4 className="text-sm font-semibold text-(--ink)">
+                    Tentang kamar
+                  </h4>
+
+                  <p
+                    className={[
+                      "mt-2",
+                      "text-xs leading-5",
+                      "text-(--stone)",
+                      "sm:text-sm sm:leading-6",
+                    ].join(" ")}
+                  >
+                    {detailRoom.deskripsi}
+                  </p>
+                </section>
+              )}
+
+              {/* Extra bottom spacing */}
+              <div className="h-2" />
+            </div>
           </div>
         </div>
-      )}
 
-      <style jsx global>{`
-        @keyframes roomModalIn {
-          from {
-            opacity: 0;
-            transform: translateY(18px) scale(0.98);
-          }
+        {/* =====================================================
+            STICKY CTA
+        ===================================================== */}
+        {whatsappHref &&
+          detailRoom.kamar_tersedia >
+            0 && (
+            <div
+              className={[
+                "relative z-20",
+                "shrink-0",
+                "border-t border-(--line)",
+                "bg-white",
+                "px-4 py-3",
+                "sm:px-5 sm:py-3.5",
+              ].join(" ")}
+            >
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={[
+                  "flex h-11 w-full",
+                  "items-center justify-center",
+                  "gap-2",
+                  "rounded-lg",
+                  "bg-(--accent)",
+                  "px-5",
+                  "text-sm font-semibold",
+                  "text-white!",
+                  "shadow-sm",
+                  "transition-all duration-200",
+                  "hover:bg-(--accent-dark)",
+                  "hover:shadow-md",
+                  "active:scale-[0.985]",
+                ].join(" ")}
+              >
+                <MessageCircle
+                  size={17}
+                />
 
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-
-        @media (min-width: 640px) {
-          @keyframes roomModalIn {
-            from {
-              opacity: 0;
-              transform: translateY(10px) scale(0.97);
-            }
-
-            to {
-              opacity: 1;
-              transform: translateY(0) scale(1);
-            }
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          @keyframes roomModalIn {
-            from,
-            to {
-              opacity: 1;
-              transform: none;
-            }
-          }
-        }
-      `}</style>
-    </>
+                Tanya kamar via WhatsApp
+              </a>
+            </div>
+          )}
+      </div>
+    </div>
   );
 }

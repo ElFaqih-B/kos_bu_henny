@@ -1,5 +1,3 @@
-// components/landing/RoomSection.tsx
-
 "use client";
 
 import {
@@ -38,9 +36,6 @@ export default function RoomSection({
   const dropdownRef =
     useRef<HTMLDivElement>(null);
 
-  const [selectedRoom, setSelectedRoom] =
-    useState<Kamar | null>(null);
-
   const [selectedBranch, setSelectedBranch] =
     useState("Semua");
 
@@ -53,13 +48,19 @@ export default function RoomSection({
   const [page, setPage] =
     useState(0);
 
+  const [selectedRoom, setSelectedRoom] =
+    useState<Kamar | null>(null);
+
   const activeRooms = useMemo(
     () =>
       [...rooms]
-        .filter((room) => room.aktif)
+        .filter(
+          (room) => room.aktif,
+        )
         .sort(
           (a, b) =>
-            a.urutan - b.urutan,
+            a.urutan - b.urutan ||
+            a.id - b.id,
         ),
     [rooms],
   );
@@ -84,13 +85,15 @@ export default function RoomSection({
   }, [activeRooms]);
 
   const filteredRooms = useMemo(() => {
-    const keyword =
-      search.trim().toLowerCase();
+    const keyword = search
+      .trim()
+      .toLowerCase();
 
     return activeRooms.filter(
       (room) => {
         const matchBranch =
-          selectedBranch === "Semua" ||
+          selectedBranch ===
+            "Semua" ||
           room.cabang?.nama ===
             selectedBranch;
 
@@ -125,14 +128,14 @@ export default function RoomSection({
     selectedBranch,
   ]);
 
-  const totalPages = Math.max(
-    Math.ceil(
-      filteredRooms.length /
-        ROOMS_PER_PAGE,
-    ),
-    1,
+  const totalPages = Math.ceil(
+    filteredRooms.length /
+      ROOMS_PER_PAGE,
   );
 
+  /*
+   * Dropdown behaviour.
+   */
   useEffect(() => {
     const closeDropdown = (
       event: MouseEvent,
@@ -147,22 +150,9 @@ export default function RoomSection({
       }
     };
 
-    const closeWithEscape = (
-      event: KeyboardEvent,
-    ) => {
-      if (event.key === "Escape") {
-        setDropdownOpen(false);
-      }
-    };
-
     document.addEventListener(
       "mousedown",
       closeDropdown,
-    );
-
-    document.addEventListener(
-      "keydown",
-      closeWithEscape,
     );
 
     return () => {
@@ -170,58 +160,60 @@ export default function RoomSection({
         "mousedown",
         closeDropdown,
       );
-
-      document.removeEventListener(
-        "keydown",
-        closeWithEscape,
-      );
     };
   }, []);
 
-  useEffect(() => {
-    if (page >= totalPages) {
-      setPage(
-        Math.max(totalPages - 1, 0),
-      );
-    }
-  }, [page, totalPages]);
+  /*
+   * Search.
+   */
+  const changeSearch = (
+    value: string,
+  ) => {
+    setSearch(value);
+    setPage(0);
 
-  const scrollToStart = () => {
     carouselRef.current?.scrollTo({
       left: 0,
       behavior: "smooth",
     });
   };
 
-  const changeSearch = (
-    value: string,
-  ) => {
-    setSearch(value);
-    setPage(0);
-    scrollToStart();
-  };
-
+  /*
+   * Branch filter.
+   */
   const changeBranch = (
     branch: string,
   ) => {
     setSelectedBranch(branch);
     setDropdownOpen(false);
     setPage(0);
-    scrollToStart();
+
+    carouselRef.current?.scrollTo({
+      left: 0,
+      behavior: "smooth",
+    });
   };
 
+  /*
+   * Reset filter.
+   */
   const resetFilter = () => {
     setSearch("");
     setSelectedBranch("Semua");
     setDropdownOpen(false);
     setPage(0);
-    scrollToStart();
+
+    carouselRef.current?.scrollTo({
+      left: 0,
+      behavior: "smooth",
+    });
   };
 
+  /*
+   * Mobile carousel.
+   */
   const scrollMobile = (
-    direction:
-      | "left"
-      | "right",
+    direction: "left" | "right",
   ) => {
     const carousel =
       carouselRef.current;
@@ -248,9 +240,15 @@ export default function RoomSection({
     });
   };
 
+  /*
+   * Desktop pagination.
+   */
   const previousPage = () => {
     setPage((current) =>
-      Math.max(current - 1, 0),
+      Math.max(
+        current - 1,
+        0,
+      ),
     );
   };
 
@@ -258,10 +256,52 @@ export default function RoomSection({
     setPage((current) =>
       Math.min(
         current + 1,
-        totalPages - 1,
+        Math.max(
+          totalPages - 1,
+          0,
+        ),
       ),
     );
   };
+
+  /*
+   * Popup.
+   */
+  const openRoomDetail = (
+    room: Kamar,
+  ) => {
+    setSelectedRoom(room);
+  };
+
+  const closeRoomDetail = () => {
+    setSelectedRoom(null);
+  };
+
+  /*
+   * Reset page if filtered data
+   * becomes shorter.
+   */
+  useEffect(() => {
+    if (
+      totalPages === 0 &&
+      page !== 0
+    ) {
+      setPage(0);
+      return;
+    }
+
+    if (
+      totalPages > 0 &&
+      page >= totalPages
+    ) {
+      setPage(
+        totalPages - 1,
+      );
+    }
+  }, [
+    totalPages,
+    page,
+  ]);
 
   if (!activeRooms.length) {
     return null;
@@ -280,6 +320,7 @@ export default function RoomSection({
         "
       >
         <div className="container-page">
+          {/* Heading */}
           <div className="max-w-xl">
             <h2
               className="
@@ -302,33 +343,29 @@ export default function RoomSection({
                 sm:text-base
               "
             >
-              Lihat pilihan kamar
-              yang tersedia dan
-              sesuaikan dengan
-              kebutuhanmu.
+              Lihat pilihan kamar yang
+              tersedia dan sesuaikan
+              dengan kebutuhanmu.
             </p>
           </div>
 
+          {/* Search & Filter */}
           <div
             className="
               mt-6
               grid
               gap-3
-              lg:grid-cols-[
-                minmax(280px,360px)_1fr
-              ]
+              lg:grid-cols-[minmax(280px,360px)_1fr]
               lg:items-center
             "
           >
             <SearchBar
               value={search}
               onChange={changeSearch}
-              placeholder="
-                Cari kamar, fasilitas,
-                atau tipe...
-              "
+              placeholder="Cari kamar, fasilitas, atau tipe..."
             />
 
+            {/* Mobile Filter */}
             {branches.length > 2 && (
               <div
                 ref={dropdownRef}
@@ -474,6 +511,7 @@ export default function RoomSection({
               </div>
             )}
 
+            {/* Desktop Filter */}
             {branches.length > 2 && (
               <div
                 className="
@@ -526,6 +564,7 @@ export default function RoomSection({
             )}
           </div>
 
+          {/* Filter Status */}
           {(search ||
             selectedBranch !==
               "Semua") && (
@@ -564,6 +603,7 @@ export default function RoomSection({
             </div>
           )}
 
+          {/* Empty Result */}
           {!filteredRooms.length && (
             <div
               className="
@@ -581,20 +621,16 @@ export default function RoomSection({
                 Kamar tidak ditemukan
               </p>
 
-              <p
-                className="
-                  mt-1
-                  text-sm
-                  text-(--stone)
-                "
-              >
+              <p className="mt-1 text-sm text-(--stone)">
                 Coba ubah pencarian
                 atau cabang.
               </p>
             </div>
           )}
 
-          {filteredRooms.length > 0 && (
+          {/* Mobile */}
+          {filteredRooms.length >
+            0 && (
             <div
               className="
                 relative
@@ -619,9 +655,7 @@ export default function RoomSection({
                         "left",
                       )
                     }
-                    aria-label="
-                      Kamar sebelumnya
-                    "
+                    aria-label="Kamar sebelumnya"
                     className="
                       grid
                       size-11
@@ -647,9 +681,7 @@ export default function RoomSection({
                         "right",
                       )
                     }
-                    aria-label="
-                      Kamar berikutnya
-                    "
+                    aria-label="Kamar berikutnya"
                     className="
                       grid
                       size-11
@@ -705,7 +737,7 @@ export default function RoomSection({
                           whatsappNumber
                         }
                         onDetail={() =>
-                          setSelectedRoom(
+                          openRoomDetail(
                             room,
                           )
                         }
@@ -717,7 +749,9 @@ export default function RoomSection({
             </div>
           )}
 
-          {filteredRooms.length > 0 && (
+          {/* Desktop */}
+          {filteredRooms.length >
+            0 && (
             <div
               className="
                 mt-10
@@ -734,8 +768,7 @@ export default function RoomSection({
                     ease-[cubic-bezier(0.22,1,0.36,1)]
                   "
                   style={{
-                    transform:
-                      `translateX(-${page * 100}%)`,
+                    transform: `translateX(-${page * 100}%)`,
                   }}
                 >
                   {Array.from({
@@ -755,9 +788,7 @@ export default function RoomSection({
 
                       return (
                         <div
-                          key={
-                            pageIndex
-                          }
+                          key={pageIndex}
                           className="
                             w-full
                             shrink-0
@@ -773,18 +804,14 @@ export default function RoomSection({
                             {pageRooms.map(
                               (room) => (
                                 <RoomCard
-                                  key={
-                                    room.id
-                                  }
-                                  room={
-                                    room
-                                  }
+                                  key={room.id}
+                                  room={room}
                                   whatsappNumber={
                                     whatsappNumber
                                   }
                                   desktop
                                   onDetail={() =>
-                                    setSelectedRoom(
+                                    openRoomDetail(
                                       room,
                                     )
                                   }
@@ -799,6 +826,7 @@ export default function RoomSection({
                 </div>
               </div>
 
+              {/* Desktop Navigation */}
               {totalPages > 1 && (
                 <div
                   className="
@@ -811,12 +839,7 @@ export default function RoomSection({
                     pt-5
                   "
                 >
-                  <p
-                    className="
-                      text-sm
-                      text-(--stone)
-                    "
-                  >
+                  <p className="text-sm text-(--stone)">
                     {page + 1} dari{" "}
                     {totalPages}
                   </p>
@@ -827,10 +850,10 @@ export default function RoomSection({
                       onClick={
                         previousPage
                       }
-                      disabled={page === 0}
-                      aria-label="
-                        Halaman kamar sebelumnya
-                      "
+                      disabled={
+                        page === 0
+                      }
+                      aria-label="Halaman kamar sebelumnya"
                       className="
                         grid
                         size-11
@@ -853,16 +876,12 @@ export default function RoomSection({
 
                     <button
                       type="button"
-                      onClick={
-                        nextPage
-                      }
+                      onClick={nextPage}
                       disabled={
                         page ===
                         totalPages - 1
                       }
-                      aria-label="
-                        Halaman kamar berikutnya
-                      "
+                      aria-label="Halaman kamar berikutnya"
                       className="
                         grid
                         size-11
@@ -890,13 +909,18 @@ export default function RoomSection({
         </div>
       </section>
 
-      <RoomDetailModal
-        room={selectedRoom}
-        whatsappNumber={whatsappNumber}
-        onClose={() =>
-          setSelectedRoom(null)
-        }
-      />
+      {/* Popup Detail */}
+      {selectedRoom && (
+        <RoomDetailModal
+          room={selectedRoom}
+          whatsappNumber={
+            whatsappNumber
+          }
+          onClose={
+            closeRoomDetail
+          }
+        />
+      )}
     </>
   );
 }
