@@ -16,8 +16,8 @@ import {
   useState,
 } from "react";
 
-import { mediaUrl } from "@/lib/media";
 import { rupiah } from "@/lib/format";
+import { mediaUrl } from "@/lib/media";
 import type { Kamar } from "@/lib/types";
 
 type RoomDetailModalProps = {
@@ -65,6 +65,7 @@ export default function RoomDetailModal({
 
   /*
    * Load detail kamar.
+   * Logic API tetap dipertahankan.
    */
   useEffect(() => {
     if (!room) {
@@ -78,12 +79,11 @@ export default function RoomDetailModal({
     setClosing(false);
     setVisible(false);
 
-    const frame =
-      window.requestAnimationFrame(() => {
-        if (!cancelled) {
-          setVisible(true);
-        }
-      });
+    const frame = window.requestAnimationFrame(() => {
+      if (!cancelled) {
+        setVisible(true);
+      }
+    });
 
     if (!room.slug || !API_BASE_URL) {
       return () => {
@@ -144,7 +144,7 @@ export default function RoomDetailModal({
   }, [room]);
 
   /*
-   * Lock body scroll.
+   * Lock body scroll ketika modal terbuka.
    */
   useEffect(() => {
     if (!room) {
@@ -163,42 +163,8 @@ export default function RoomDetailModal({
   }, [room]);
 
   /*
-   * Keyboard interaction.
+   * Bersihkan timer ketika component unmount.
    */
-  useEffect(() => {
-    if (!room) {
-      return;
-    }
-
-    const handleKeyDown = (
-      event: KeyboardEvent,
-    ) => {
-      if (event.key === "Escape") {
-        requestClose();
-      }
-
-      if (event.key === "ArrowLeft") {
-        previousImage();
-      }
-
-      if (event.key === "ArrowRight") {
-        nextImage();
-      }
-    };
-
-    document.addEventListener(
-      "keydown",
-      handleKeyDown,
-    );
-
-    return () => {
-      document.removeEventListener(
-        "keydown",
-        handleKeyDown,
-      );
-    };
-  }, [room]);
-
   useEffect(() => {
     return () => {
       if (closeTimerRef.current) {
@@ -208,23 +174,12 @@ export default function RoomDetailModal({
   }, []);
 
   /*
-   * Close animation.
-   */
-  const requestClose = () => {
-    if (closing) {
-      return;
-    }
-
-    setClosing(true);
-    setVisible(false);
-
-    closeTimerRef.current = setTimeout(() => {
-      onClose();
-    }, 220);
-  };
-
-  /*
    * Gallery.
+   *
+   * Tetap menggunakan:
+   * - url_gambar sebagai foto utama
+   * - foto[].path_foto sebagai foto tambahan
+   * - mediaUrl() untuk membentuk URL media
    */
   const images = useMemo<GalleryItem[]>(() => {
     if (!detailRoom) {
@@ -316,21 +271,70 @@ export default function RoomDetailModal({
   };
 
   /*
+   * Close animation.
+   */
+  const requestClose = () => {
+    if (closing) {
+      return;
+    }
+
+    setClosing(true);
+    setVisible(false);
+
+    closeTimerRef.current = setTimeout(() => {
+      onClose();
+    }, 220);
+  };
+
+  /*
+   * Keyboard interaction.
+   */
+  useEffect(() => {
+    if (!room) {
+      return;
+    }
+
+    const handleKeyDown = (
+      event: KeyboardEvent,
+    ) => {
+      if (event.key === "Escape") {
+        requestClose();
+        return;
+      }
+
+      if (event.key === "ArrowLeft") {
+        previousImage();
+        return;
+      }
+
+      if (event.key === "ArrowRight") {
+        nextImage();
+      }
+    };
+
+    document.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
+    };
+  }, [room, images.length]);
+
+  /*
    * WhatsApp.
    */
   const whatsappHref = useMemo(() => {
-    if (
-      !whatsappNumber ||
-      !detailRoom
-    ) {
+    if (!whatsappNumber || !detailRoom) {
       return null;
     }
 
     const phone =
-      whatsappNumber.replace(
-        /\D/g,
-        "",
-      );
+      whatsappNumber.replace(/\D/g, "");
 
     if (!phone) {
       return null;
@@ -385,33 +389,27 @@ export default function RoomDetailModal({
     >
       <div
         className={[
-          "relative",
-          "flex flex-col",
+          "relative flex flex-col",
           "overflow-hidden",
           "bg-white",
           "shadow-[0_24px_80px_rgba(0,0,0,0.24)]",
 
-          /*
-           * MOBILE
-           */
+          // Mobile
           "w-[calc(100vw-24px)]",
           "max-w-[430px]",
           "max-h-[82dvh]",
           "rounded-2xl",
 
-          /*
-           * DESKTOP
-           */
+          // Desktop
           "sm:w-full",
           "sm:max-w-[820px]",
           "sm:max-h-[82dvh]",
-          "sm:rounded-2xl",
 
+          // Animation
           "transform-gpu",
           "transition-[transform,opacity]",
           "duration-250",
           "ease-[cubic-bezier(0.22,1,0.36,1)]",
-
           visible && !closing
             ? "translate-y-0 scale-100 opacity-100"
             : "translate-y-3 scale-[0.985] opacity-0",
@@ -420,20 +418,18 @@ export default function RoomDetailModal({
           event.stopPropagation();
         }}
       >
-        {/* =====================================================
-            HEADER
-        ===================================================== */}
+        {/* Header */}
         <header
-          className={[
-            "relative z-10",
-            "flex shrink-0",
-            "items-center justify-between",
-            "gap-3",
-            "border-b border-(--line)",
-            "bg-white",
-            "px-4 py-3",
-            "sm:px-5 sm:py-3.5",
-          ].join(" ")}
+          className="
+            relative z-10
+            flex shrink-0
+            items-center justify-between
+            gap-3
+            border-b border-(--line)
+            bg-white
+            px-4 py-3
+            sm:px-5 sm:py-3.5
+          "
         >
           <div className="min-w-0">
             <p className="text-[11px] text-(--stone)">
@@ -441,12 +437,12 @@ export default function RoomDetailModal({
             </p>
 
             <h2
-              className={[
-                "truncate",
-                "text-base font-semibold",
-                "text-(--ink)",
-                "sm:text-lg",
-              ].join(" ")}
+              className="
+                truncate
+                text-base font-semibold
+                text-(--ink)
+                sm:text-lg
+              "
             >
               {detailRoom.nama}
             </h2>
@@ -456,88 +452,64 @@ export default function RoomDetailModal({
             type="button"
             onClick={requestClose}
             aria-label="Tutup detail kamar"
-            className={[
-              "grid size-9 shrink-0",
-              "place-items-center",
-              "rounded-lg",
-              "border border-(--line)",
-              "bg-white",
-              "text-(--ink)",
-              "transition-all duration-200",
-              "hover:bg-(--cream)",
-              "active:scale-90",
-              "sm:size-10",
-            ].join(" ")}
+            className="
+              grid size-9 shrink-0
+              place-items-center
+              rounded-lg
+              border border-(--line)
+              bg-white
+              text-(--ink)
+              transition-all duration-200
+              hover:bg-(--cream)
+              active:scale-90
+              sm:size-10
+            "
           >
             <X size={18} />
           </button>
         </header>
 
-        {/* =====================================================
-            MAIN
-            Mobile  : gallery -> content
-            Desktop : gallery | content
-        ===================================================== */}
+        {/* Main */}
         <div
-          className={[
-            "min-h-0 flex-1",
-            "flex flex-col",
-            "overflow-hidden",
-
-            "sm:grid",
-            "sm:grid-cols-[1.05fr_0.95fr]",
-          ].join(" ")}
+          className="
+            min-h-0
+            flex flex-1 flex-col
+            overflow-hidden
+            sm:grid
+            sm:grid-cols-[1.05fr_0.95fr]
+          "
         >
-          {/* ===================================================
-              GALLERY
-          =================================================== */}
+          {/* Gallery */}
           <div
-            className={[
-              "relative shrink-0",
-              "bg-(--cream)",
-
-              /*
-               * Mobile:
-               * jangan biarkan foto mengambil
-               * sebagian besar layar.
-               */
-              "h-[190px]",
-
-              /*
-               * Small mobile sedikit lebih besar.
-               */
-              "xs:h-[205px]",
-
-              /*
-               * Desktop:
-               * gallery mendapat area sendiri.
-               */
-              "sm:h-full",
-              "sm:min-h-[420px]",
-            ].join(" ")}
+            className="
+              relative shrink-0
+              h-47.5
+              bg-(--cream)
+              xs:h-[205px]
+              sm:h-full
+              sm:min-h-105
+            "
           >
             {activeItem ? (
               <>
                 <img
                   src={activeItem.src}
                   alt={activeItem.alt}
-                  className={[
-                    "h-full w-full",
-                    "object-cover",
-                  ].join(" ")}
+                  className="
+                    h-full w-full
+                    object-cover
+                  "
                 />
 
-                {/* Gradient bawah supaya
-                    indikator tetap terbaca */}
                 <div
-                  className={[
-                    "pointer-events-none",
-                    "absolute inset-x-0 bottom-0",
-                    "h-24",
-                    "bg-gradient-to-t",
-                    "from-black/45",
-                    "to-transparent",
-                  ].join(" ")}
+                  className="
+                    pointer-events-none
+                    absolute inset-x-0 bottom-0
+                    h-24
+                    bg-gradient-to-t
+                    from-black/45
+                    to-transparent
+                  "
                 />
 
                 {images.length > 1 && (
@@ -546,62 +518,57 @@ export default function RoomDetailModal({
                       type="button"
                       onClick={previousImage}
                       aria-label="Foto sebelumnya"
-                      className={[
-                        "absolute left-3 top-1/2",
-                        "grid size-8",
-                        "-translate-y-1/2",
-                        "place-items-center",
-                        "rounded-full",
-                        "bg-black/45",
-                        "text-white",
-                        "backdrop-blur-sm",
-                        "transition-all duration-200",
-                        "hover:bg-black/60",
-                        "active:scale-90",
-                        "sm:left-4 sm:size-10",
-                      ].join(" ")}
+                      className="
+                        absolute left-3 top-1/2
+                        grid size-8
+                        -translate-y-1/2
+                        place-items-center
+                        rounded-full
+                        bg-black/45
+                        text-white
+                        backdrop-blur-sm
+                        transition-all duration-200
+                        hover:bg-black/60
+                        active:scale-90
+                        sm:left-4 sm:size-10
+                      "
                     >
-                      <ChevronLeft
-                        size={18}
-                      />
+                      <ChevronLeft size={18} />
                     </button>
 
                     <button
                       type="button"
                       onClick={nextImage}
                       aria-label="Foto berikutnya"
-                      className={[
-                        "absolute right-3 top-1/2",
-                        "grid size-8",
-                        "-translate-y-1/2",
-                        "place-items-center",
-                        "rounded-full",
-                        "bg-black/45",
-                        "text-white",
-                        "backdrop-blur-sm",
-                        "transition-all duration-200",
-                        "hover:bg-black/60",
-                        "active:scale-90",
-                        "sm:right-4 sm:size-10",
-                      ].join(" ")}
+                      className="
+                        absolute right-3 top-1/2
+                        grid size-8
+                        -translate-y-1/2
+                        place-items-center
+                        rounded-full
+                        bg-black/45
+                        text-white
+                        backdrop-blur-sm
+                        transition-all duration-200
+                        hover:bg-black/60
+                        active:scale-90
+                        sm:right-4 sm:size-10
+                      "
                     >
-                      <ChevronRight
-                        size={18}
-                      />
+                      <ChevronRight size={18} />
                     </button>
 
-                    {/* Counter */}
                     <div
-                      className={[
-                        "absolute bottom-3 right-3",
-                        "rounded-full",
-                        "bg-black/55",
-                        "px-2.5 py-1",
-                        "text-[10px] font-medium",
-                        "text-white",
-                        "backdrop-blur-sm",
-                        "sm:bottom-4 sm:right-4",
-                      ].join(" ")}
+                      className="
+                        absolute bottom-3 right-3
+                        rounded-full
+                        bg-black/55
+                        px-2.5 py-1
+                        text-[10px] font-medium
+                        text-white
+                        backdrop-blur-sm
+                        sm:bottom-4 sm:right-4
+                      "
                     >
                       {safeImageIndex + 1} /{" "}
                       {images.length}
@@ -611,16 +578,16 @@ export default function RoomDetailModal({
 
                 {activeItem.caption && (
                   <div
-                    className={[
-                      "absolute bottom-3 left-3",
-                      "max-w-[65%]",
-                      "rounded-md",
-                      "bg-black/50",
-                      "px-2.5 py-1",
-                      "text-[10px]",
-                      "text-white",
-                      "backdrop-blur-sm",
-                    ].join(" ")}
+                    className="
+                      absolute bottom-3 left-3
+                      max-w-[65%]
+                      rounded-md
+                      bg-black/50
+                      px-2.5 py-1
+                      text-[10px]
+                      text-white
+                      backdrop-blur-sm
+                    "
                   >
                     {activeItem.caption}
                   </div>
@@ -628,11 +595,11 @@ export default function RoomDetailModal({
               </>
             ) : (
               <div
-                className={[
-                  "flex h-full",
-                  "items-center justify-center",
-                  "text-sm text-(--stone)",
-                ].join(" ")}
+                className="
+                  flex h-full
+                  items-center justify-center
+                  text-sm text-(--stone)
+                "
               >
                 Foto kamar belum tersedia
               </div>
@@ -640,75 +607,68 @@ export default function RoomDetailModal({
 
             {loading && (
               <div
-                className={[
-                  "absolute left-3 top-3",
-                  "flex items-center gap-1.5",
-                  "rounded-full",
-                  "bg-black/50",
-                  "px-2.5 py-1.5",
-                  "text-[10px]",
-                  "text-white",
-                  "backdrop-blur-sm",
-                ].join(" ")}
+                className="
+                  absolute left-3 top-3
+                  flex items-center gap-1.5
+                  rounded-full
+                  bg-black/50
+                  px-2.5 py-1.5
+                  text-[10px]
+                  text-white
+                  backdrop-blur-sm
+                "
               >
                 <Loader2
                   size={12}
                   className="animate-spin"
                 />
-
                 Memuat
               </div>
             )}
           </div>
 
-          {/* ===================================================
-              DETAIL CONTENT
-          =================================================== */}
+          {/* Detail */}
           <div
-            className={[
-              "min-h-0",
-              "overflow-y-auto",
-              "overscroll-contain",
-              "scrollbar-none",
-              "[&::-webkit-scrollbar]:hidden",
-              "bg-white",
-            ].join(" ")}
+            className="
+              min-h-0
+              overflow-y-auto
+              overscroll-contain
+              scrollbar-none
+              [&::-webkit-scrollbar]:hidden
+              bg-white
+            "
           >
             <div
-              className={[
-                "px-4 py-4",
-                "sm:px-6 sm:py-6",
-              ].join(" ")}
+              className="
+                px-4 py-4
+                sm:px-6 sm:py-6
+              "
             >
-              {/* Type */}
               <p className="text-xs text-(--stone)">
                 {detailRoom.tipe}
               </p>
 
-              {/* Name */}
               <h3
-                className={[
-                  "mt-1",
-                  "text-xl font-semibold",
-                  "leading-tight",
-                  "tracking-[-0.02em]",
-                  "text-(--ink)",
-                  "sm:text-2xl",
-                ].join(" ")}
+                className="
+                  mt-1
+                  text-xl font-semibold
+                  leading-tight
+                  tracking-[-0.02em]
+                  text-(--ink)
+                  sm:text-2xl
+                "
               >
                 {detailRoom.nama}
               </h3>
 
-              {/* Location */}
               {detailRoom.cabang?.nama && (
                 <div
-                  className={[
-                    "mt-2",
-                    "flex items-center",
-                    "gap-1.5",
-                    "text-xs text-(--stone)",
-                    "sm:text-sm",
-                  ].join(" ")}
+                  className="
+                    mt-2
+                    flex items-center gap-1.5
+                    text-xs text-(--stone)
+                    sm:text-sm
+                  "
                 >
                   <MapPin
                     size={14}
@@ -721,20 +681,23 @@ export default function RoomDetailModal({
                 </div>
               )}
 
-              {/* =================================================
-                  PRICE
-              ================================================= */}
+              {/* Harga */}
               <div className="mt-4">
                 <p className="text-[11px] text-(--stone)">
                   Harga per bulan
                 </p>
 
-                <div className="mt-0.5 flex items-baseline gap-1.5">
+                <div
+                  className="
+                    mt-0.5
+                    flex items-baseline gap-1.5
+                  "
+                >
                   <span
-                    className={[
-                      "text-xl font-bold",
-                      "text-(--accent)",
-                    ].join(" ")}
+                    className="
+                      text-xl font-bold
+                      text-(--accent)
+                    "
                   >
                     {rupiah(
                       detailRoom.harga_bulanan,
@@ -747,37 +710,37 @@ export default function RoomDetailModal({
                 </div>
               </div>
 
-              {/* =================================================
-                  QUICK INFO
-              ================================================= */}
+              {/* Informasi singkat */}
               <div
-                className={[
-                  "mt-4",
-                  "grid grid-cols-2",
-                  "gap-2",
-                ].join(" ")}
+                className="
+                  mt-4
+                  grid grid-cols-2
+                  gap-2
+                "
               >
                 <div
-                  className={[
-                    "rounded-lg",
-                    "border border-(--line)",
-                    "bg-(--cream)",
-                    "px-3 py-2.5",
-                  ].join(" ")}
+                  className="
+                    rounded-lg
+                    border border-(--line)
+                    bg-(--cream)
+                    px-3 py-2.5
+                  "
                 >
                   <p className="text-[10px] text-(--stone)">
                     Ketersediaan
                   </p>
 
                   <p
-                    className={[
-                      "mt-0.5",
-                      "text-sm font-semibold",
-                      detailRoom.kamar_tersedia >
-                      0
-                        ? "text-(--accent)"
-                        : "text-(--stone)",
-                    ].join(" ")}
+                    className={`
+                      mt-0.5
+                      text-sm font-semibold
+                      ${
+                        detailRoom.kamar_tersedia >
+                        0
+                          ? "text-(--accent)"
+                          : "text-(--stone)"
+                      }
+                    `}
                   >
                     {detailRoom.kamar_tersedia}{" "}
                     kamar
@@ -785,27 +748,24 @@ export default function RoomDetailModal({
                 </div>
 
                 <div
-                  className={[
-                    "rounded-lg",
-                    "border border-(--line)",
-                    "bg-(--cream)",
-                    "px-3 py-2.5",
-                  ].join(" ")}
+                  className="
+                    rounded-lg
+                    border border-(--line)
+                    bg-(--cream)
+                    px-3 py-2.5
+                  "
                 >
                   <p className="text-[10px] text-(--stone)">
                     Ukuran
                   </p>
 
                   <p className="mt-0.5 text-sm font-semibold text-(--ink)">
-                    {detailRoom.ukuran ||
-                      "-"}
+                    {detailRoom.ukuran || "-"}
                   </p>
                 </div>
               </div>
 
-              {/* =================================================
-                  FACILITIES
-              ================================================= */}
+              {/* Fasilitas */}
               {detailRoom.fasilitas &&
                 detailRoom.fasilitas.length >
                   0 && (
@@ -815,30 +775,29 @@ export default function RoomDetailModal({
                     </h4>
 
                     <div
-                      className={[
-                        "mt-2.5",
-                        "grid grid-cols-2",
-                        "gap-x-3 gap-y-2",
-                      ].join(" ")}
+                      className="
+                        mt-2.5
+                        grid grid-cols-2
+                        gap-x-3 gap-y-2
+                      "
                     >
                       {detailRoom.fasilitas.map(
                         (facility, index) => (
                           <div
                             key={`${facility}-${index}`}
-                            className={[
-                              "flex items-center",
-                              "gap-2",
-                              "min-w-0",
-                            ].join(" ")}
+                            className="
+                              flex min-w-0
+                              items-center gap-2
+                            "
                           >
                             <span
-                              className={[
-                                "grid size-5 shrink-0",
-                                "place-items-center",
-                                "rounded-full",
-                                "bg-(--cream)",
-                                "text-(--accent)",
-                              ].join(" ")}
+                              className="
+                                grid size-5 shrink-0
+                                place-items-center
+                                rounded-full
+                                bg-(--cream)
+                                text-(--accent)
+                              "
                             >
                               <Check
                                 size={12}
@@ -847,11 +806,11 @@ export default function RoomDetailModal({
                             </span>
 
                             <span
-                              className={[
-                                "truncate",
-                                "text-xs",
-                                "text-(--ink-soft)",
-                              ].join(" ")}
+                              className="
+                                truncate
+                                text-xs
+                                text-(--ink-soft)
+                              "
                             >
                               {facility}
                             </span>
@@ -862,9 +821,7 @@ export default function RoomDetailModal({
                   </section>
                 )}
 
-              {/* =================================================
-                  DESCRIPTION
-              ================================================= */}
+              {/* Deskripsi */}
               {detailRoom.deskripsi && (
                 <section className="mt-5">
                   <h4 className="text-sm font-semibold text-(--ink)">
@@ -872,64 +829,57 @@ export default function RoomDetailModal({
                   </h4>
 
                   <p
-                    className={[
-                      "mt-2",
-                      "text-xs leading-5",
-                      "text-(--stone)",
-                      "sm:text-sm sm:leading-6",
-                    ].join(" ")}
+                    className="
+                      mt-2
+                      text-xs leading-5
+                      text-(--stone)
+                      sm:text-sm sm:leading-6
+                    "
                   >
                     {detailRoom.deskripsi}
                   </p>
                 </section>
               )}
 
-              {/* Extra bottom spacing */}
               <div className="h-2" />
             </div>
           </div>
         </div>
 
-        {/* =====================================================
-            STICKY CTA
-        ===================================================== */}
+        {/* WhatsApp CTA */}
         {whatsappHref &&
-          detailRoom.kamar_tersedia >
-            0 && (
+          detailRoom.kamar_tersedia > 0 && (
             <div
-              className={[
-                "relative z-20",
-                "shrink-0",
-                "border-t border-(--line)",
-                "bg-white",
-                "px-4 py-3",
-                "sm:px-5 sm:py-3.5",
-              ].join(" ")}
+              className="
+                relative z-20
+                shrink-0
+                border-t border-(--line)
+                bg-white
+                px-4 py-3
+                sm:px-5 sm:py-3.5
+              "
             >
               <a
                 href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={[
-                  "flex h-11 w-full",
-                  "items-center justify-center",
-                  "gap-2",
-                  "rounded-lg",
-                  "bg-(--accent)",
-                  "px-5",
-                  "text-sm font-semibold",
-                  "text-white!",
-                  "shadow-sm",
-                  "transition-all duration-200",
-                  "hover:bg-(--accent-dark)",
-                  "hover:shadow-md",
-                  "active:scale-[0.985]",
-                ].join(" ")}
+                className="
+                  flex h-11 w-full
+                  items-center justify-center
+                  gap-2
+                  rounded-lg
+                  bg-(--accent)
+                  px-5
+                  text-sm font-semibold
+                  text-white!
+                  shadow-sm
+                  transition-all duration-200
+                  hover:bg-(--accent-dark)
+                  hover:shadow-md
+                  active:scale-[0.985]
+                "
               >
-                <MessageCircle
-                  size={17}
-                />
-
+                <MessageCircle size={17} />
                 Tanya kamar via WhatsApp
               </a>
             </div>
