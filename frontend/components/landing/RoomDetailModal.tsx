@@ -98,7 +98,7 @@ export default function RoomDetailModal({
       try {
         const response = await fetch(
           `${API_BASE_URL}/kamar/${encodeURIComponent(
-            room.slug,
+            room.slug ?? "",
           )}`,
           {
             method: "GET",
