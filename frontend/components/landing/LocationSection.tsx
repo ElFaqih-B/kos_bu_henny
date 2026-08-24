@@ -50,13 +50,7 @@ function buildMapEmbedUrl(
     );
   }
 
-  /*
-   * Fallback hanya jika data lama belum mempunyai
-   * latitude/longitude.
-   *
-   * Ini berguna untuk cabang lama yang belum pernah
-   * disimpan ulang setelah fitur koordinat ditambahkan.
-   */
+
   const addressQuery = [
     branch.alamat,
     branch.kota,
