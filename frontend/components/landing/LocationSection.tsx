@@ -373,7 +373,7 @@ export default function LocationSection({
               href={googleMapsLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-6 inline-flex min-h-11 items-center gap-2 border border-(--ink) px-4 py-2.5 text-xs font-semibold text-(--ink) transition hover:bg-(--ink) hover:text-white!"
+              className="mt-6 inline-flex min-h-11 items-center gap-2 border border-(--ink) px-4 py-2.5 text-xs font-semibold text-(--ink) transition hover:bg-(--accent-dark) hover:text-white!"
             >
               Buka di Google Maps
               <ExternalLink size={15} />
