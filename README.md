@@ -7,7 +7,7 @@ Website dirancang dengan pendekatan modern, responsif, dan mobile-first sehingga
 ## Preview
 
 Website:
-[https://kos-omah-subardiman.vercel.app](https://kos-omah-subardiman.vercel.app)
+[https://kos-omah-subardiman.vercel.app](https://omah-subardiman-kos.vercel.app/)
 
 
 ---
